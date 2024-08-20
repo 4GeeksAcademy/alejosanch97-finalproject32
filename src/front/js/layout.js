@@ -4,13 +4,16 @@ import ScrollToTop from "./component/scrollToTop";
 import { BackendURL } from "./component/backendURL";
 
 import { Home } from "./pages/home";
-import { Demo } from "./pages/demo";
-import { Single } from "./pages/single";
 import injectContext from "./store/appContext";
 
-import { Navbar } from "./component/navbar";
+import { Navbar } from "./component/Navbar.jsx";
+import { Login } from "./pages/Login.jsx";
 import { Footer } from "./component/footer";
-
+import { Dashboard } from "./pages/Dashboard.jsx";
+import { Tasks } from "./pages/Tasks.jsx";
+import {Profile} from "./pages/Profile.jsx"
+import {ProjectManager} from "./pages/ProjectManager.jsx"
+import { TaskManager } from "./pages/TaskManager.jsx";
 //create your first component
 const Layout = () => {
     //the basename is used when your project is published in a subdirectory and not in the root of the domain
@@ -26,8 +29,12 @@ const Layout = () => {
                     <Navbar />
                     <Routes>
                         <Route element={<Home />} path="/" />
-                        <Route element={<Demo />} path="/demo" />
-                        <Route element={<Single />} path="/single/:theid" />
+                        <Route element={<Login/>} path="/login"/>
+                        <Route element={<Dashboard/>} path="/dashboard"/>
+                        <Route element={<Tasks/>} path="/tasks"/>
+                        <Route element={<Profile/>} path="/profile"/>
+                        <Route element={<ProjectManager />} path="/projectmanager" />
+                        <Route element={<TaskManager />} path="/TaskManager" />
                         <Route element={<h1>Not found!</h1>} />
                     </Routes>
                     <Footer />

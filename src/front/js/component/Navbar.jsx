@@ -12,16 +12,22 @@ export const Navbar = () => {
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav">
                         <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="#">Home</a>
+                            <Link className="nav-link" to="/">Home</Link>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">Features</a>
+                            <Link className="nav-link" to="/login">Login</Link>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">Pricing</a>
+                            <Link className="nav-link" to="/tasks">Tasks</Link>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link disabled" aria-disabled="true">Disabled</a>
+                            <Link className="nav-link" to="/profile">Profile</Link>
+                        </li>
+                        <li class="nav-item">
+                            <Link className="nav-link" to="/projectmanager">Project Manager</Link>
+                        </li>
+                        <li class="nav-item">
+                            <Link className="nav-link" to="/taskmanager">Task Manager</Link>
                         </li>
                     </ul>
                 </div>
