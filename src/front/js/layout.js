@@ -14,6 +14,7 @@ import { Tasks } from "./pages/Tasks.jsx";
 import {Profile} from "./pages/Profile.jsx"
 import {ProjectManager} from "./pages/ProjectManager.jsx"
 import { TaskManager } from "./pages/TaskManager.jsx";
+import {Form} from "./component/register.jsx"
 //create your first component
 const Layout = () => {
     //the basename is used when your project is published in a subdirectory and not in the root of the domain
@@ -36,6 +37,7 @@ const Layout = () => {
                         <Route element={<ProjectManager />} path="/projectmanager" />
                         <Route element={<TaskManager />} path="/TaskManager" />
                         <Route element={<h1>Not found!</h1>} />
+                        <Route element={<Form/>} path="/register"/>
                     </Routes>
                     <Footer />
                 </ScrollToTop>
