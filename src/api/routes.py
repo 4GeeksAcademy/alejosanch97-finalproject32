@@ -3,7 +3,7 @@ This module takes care of starting the API Server, Loading the DB and Adding the
 """
 from flask import Flask, request, jsonify, url_for, Blueprint
 from flask_migrate import Migrate
-from api.models import db, User
+from api.models import db, User, Projects
 from api.utils import generate_sitemap, APIException
 from admin import setup_admin
 from flask_cors import CORS
@@ -28,6 +28,7 @@ def handle_hello():
     }
 
     return jsonify(response_body), 200
+
 
 @api.route('/user', methods=["POST"])
 def add_user():
@@ -75,3 +76,4 @@ def ad_project():
 def get_all_projects():
     projects = Projects()
     projects = projects.query.all()
+
