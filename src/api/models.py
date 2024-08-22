@@ -5,6 +5,7 @@ db = SQLAlchemy()
 
 class Users(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+
     first_name = db.Column(db.String(120), unique=False, nullable=False)
     last_name = db.Column(db.String(120), unique=False, nullable=False)
     username = db.Column(db.String(120), unique=True, nullable=False)
@@ -13,6 +14,7 @@ class Users(db.Model):
     role_id = db.Column(db.Integer, db.ForeignKey("roles.id"), nullable=False)
     enterprise_id = db.Column(db.String(80),db.ForeignKey("enterprises.id"), nullable=False)
     created_at = db.Column(db.DateTime(), default=datetime.now(timezone.utc), nullable=False)
+
 
     def __repr__(self):
         return f'<User {self.email}>'
