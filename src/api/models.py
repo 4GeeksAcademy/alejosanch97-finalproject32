@@ -32,9 +32,10 @@ class Projects(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), unique=False)
     description = db.Column(db.String(120), unique=False)
+    start_date = db.Column(db.DateTime(), default=datetime.now(timezone.utc), unique=False)
     end_date = db.Column(db.DateTime(), unique=False)
-    creation_date = db.Column(db.DateTime(), default=datetime.now(timezone.utc), unique=False)
     enterprise_id = db.Column(db.Integer, db.ForeignKey('enterprises.id'), unique=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=False)
 
     def serialize(self):
         return {
@@ -58,15 +59,14 @@ class Enterprises(db.Model):
             "address": self.address
         }
 
-class Sub_tasks(db.Model):
+class Tasks(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    task_id = db.Column(db.Integer, db.ForeignKey("tasks.id"), unique=False)
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id"), unique=False)
     name = db.Column(db.String(120), unique=False)
     description = db.Column(db.String(120), unique=False)
     status = db.Column(db.String(120), unique=False)
     due_date = db.Column(db.DateTime(), unique=False)
     creation_date = db.Column(db.DateTime(), default=datetime.now(timezone.utc), unique=False)
-    enterprise_id = db.Column(db.Integer, db.ForeignKey('enterprises.id'), unique=False)
 
     def serialize(self):
         return {
@@ -80,22 +80,24 @@ class Sub_tasks(db.Model):
             "enterprise_id": self.enterprise_id
         }
 
-class Projects(db.Model):
+class Sub_tasks(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    task_id = db.Column(db.Integer, db.ForeignKey("tasks.id"), unique=False)
     name = db.Column(db.String(120), unique=False)
     description = db.Column(db.String(120), unique=False)
-    start_date = db.Column(db.DateTime(), default=datetime.now(timezone.utc), unique=False)
-    end_date = db.Column(db.DateTime(), unique=False)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), unique=False)
-    enterprise_id = db.Column(db.Integer, db.ForeignKey('enterprises.id'), unique=False)
+    status = db.Column(db.String(120), unique=False)
+    due_date = db.Column(db.DateTime(), unique=False)
+    creation_date = db.Column(db.DateTime(), default=datetime.now(timezone.utc), unique=False)
 
     def serialize(self):
         return {
             "id": self.id,
+            "task_id": self.task_id,
             "name": self.name,
-            "description":self.description,
-            "start_date": self.start_date,
-            "created_by": self.user_id,
+            "description": self.description,
+            "status": self.status,
+            "due_date": self.due_date,
+            "creation_date": self.creation_date,
             "enterprise_id": self.enterprise_id
         }
 
