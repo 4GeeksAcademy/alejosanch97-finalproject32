@@ -29,17 +29,34 @@ def handle_hello():
 
     return jsonify(response_body), 200
 
+#Get all tasks.
+@api.route('/task', methos=['GET'])
+def get_tasks():
+    task= Tasks.query.all()
+    task = list(map(lambda item: item.serialize(),task))
+    return jsonify(task), 200
 
-@api.route('/add-task', methods=['POST'])
-def add_task():
+#Get one task.
+@api.route('/task/<int:id>', methods="GET")
+def get_one_task():
+    task = Tasks.query.filter_by(id=id).one_or_none()
+    return jsonify({"task":task})
+
+#Post task.
+@api.route('/task/<int:enterprise_id>', methods=['POST'])
+def add_task(enterprise_id):
     data = request.json
-    task_name = data.get("name")
-    task_description = data.get("description")
-    task_due_date = data.get("due_date")
+    task_name = data.get("name", None)
+    task_description = data.get("description", None)
+    task_due_date = data.get("due_date", None)
+    if task_name is None:
+        return jsonify({"error":"The task sould have a name"})
     task = Tasks(
         name= task_name,
         description= task_description,
-        due_date = task_due_date
+        due_date = task_due_date,
+        status = "Pending.",
+        enterprise_id = enterprise_id
     )
 
     try:
@@ -50,6 +67,7 @@ def add_task():
         print(error.args)
         db.session.rollback()
         return jsonify({"message":error})
+
 @api.route('/user', methods=["POST"])
 def add_user():
     body = request.json
