@@ -138,7 +138,6 @@ def ad_project():
 def get_all_projects():
     projects = Projects()
     projects = projects.query.all()
-<<<<<<< HEAD
 
 #Login
 @api.route("/login", methods=["POST"])
@@ -159,5 +158,3 @@ def login():
                 return jsonify({"token":token}), 200
             else:
                 return jsonify({"message":"bad password"}), 400
-=======
->>>>>>> feature/add-task
