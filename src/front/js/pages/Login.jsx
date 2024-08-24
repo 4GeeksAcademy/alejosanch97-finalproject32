@@ -67,6 +67,14 @@ export const Login = () => {
                             />
                         </div>
                         <button className="btn btn-primary">Login</button>
+                        {/* New register button and link */}
+                        <div className="mt-3 text-center">
+                            ¿No tienes una cuenta?
+                            <Link to="/register" className="ms-2 text-decoration-none">
+                            Regístrate aquí
+                            </Link>
+                        </div>
+                        {/* End of new register button and link */}
                     </form>
             }
             {
