@@ -13,7 +13,9 @@ const getState = ({ getStore, getActions, setStore }) => {
 					background: "white",
 					initial: "white"
 				}
-			]
+			],
+            token: localStorage.getItem("token") || null,
+            user: localStorage.getItem("user")|| null
 		},
 		actions: {
 			// Use getActions to call a function within a fuction
@@ -46,7 +48,54 @@ const getState = ({ getStore, getActions, setStore }) => {
 
 				//reset the global store
 				setStore({ demo: demo });
-			}
+			},
+
+            login: async (user) => {
+				try {
+					const response = await fetch(`${process.env.BACKEND_URL}/api/login`, {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json"
+						},
+						body: JSON.stringify(user)
+					})
+					const data = await response.json()
+					if (response.status == 200) {
+						setStore({
+							token: data.token
+						})
+						localStorage.setItem("token", data.token)
+						getActions().getUserLogin()
+						return true
+					} else {
+						return false
+					}
+
+				} catch (error) {
+					console.log(error)
+				}
+			},
+
+            getUserLogin: async() =>{
+                try{
+                    const response = await fetch('${process.env.BACKEND_URL}/api/user', {
+                        method:'GET',
+                        headers: {
+                            "Authorization":'Bearer ${getStore().token}'
+                        }
+                    })
+                    const data = await response.json()
+                    if (response.ok){
+                        setStrore({
+                            user:data
+                        })
+                        localStorage.setItem("user", JSON.stringify(data))
+                    }
+                }
+                catch (error){
+                    console.log(error)
+                }
+            }
 		}
 	};
 };

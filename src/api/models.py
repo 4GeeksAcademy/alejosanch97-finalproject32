@@ -10,9 +10,10 @@ class Users(db.Model):
     last_name = db.Column(db.String(120), unique=False, nullable=False)
     username = db.Column(db.String(120), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(120), unique=False, nullable=False)
-    role_id = db.Column(db.Integer, db.ForeignKey("roles.id"), nullable=False)
-    enterprise_id = db.Column(db.String(80),db.ForeignKey("enterprises.id"), nullable=False)
+    password = db.Column(db.String(180), unique=False, nullable=False)
+    role_id = db.Column(db.Integer, db.ForeignKey("roles.id"), nullable=True)
+    salt = db.Column(db.String(180), nullable=False)
+    enterprise_id = db.Column(db.Integer ,db.ForeignKey("enterprises.id"), nullable=True)
     created_at = db.Column(db.DateTime(), default=datetime.now(timezone.utc), nullable=False)
 
 
