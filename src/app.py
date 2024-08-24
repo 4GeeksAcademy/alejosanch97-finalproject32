@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify, url_for, send_from_directory
 from flask_migrate import Migrate
 from flask_swagger import swagger
 from api.utils import APIException, generate_sitemap
-from api.models import db
+from api.models import db, Roles
 from api.routes import api
 from api.admin import setup_admin
 from api.commands import setup_commands
@@ -31,6 +31,26 @@ else:
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 MIGRATE = Migrate(app, db, compare_type=True)
 db.init_app(app)
+
+#creacion de roles
+def create_roles():
+    roles = [
+        {"id": 1, "name": "Usuario"},
+        {"id": 2, "name": "Administrador"},
+        # Agrega más roles según sea necesario
+    ]
+    
+    for role in roles:
+        existing_role = Roles.query.get(role["id"])
+        if not existing_role:
+            new_role = Roles(id=role["id"], name=role["name"])
+            db.session.add(new_role)
+    
+    db.session.commit()
+
+# Llama a create_roles dentro del contexto de la aplicación
+with app.app_context():
+    create_roles()
 
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")   # Change this!
 jwt = JWTManager(app)

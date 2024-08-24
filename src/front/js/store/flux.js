@@ -95,7 +95,30 @@ const getState = ({ getStore, getActions, setStore }) => {
                 catch (error){
                     console.log(error)
                 }
-            }
+            },
+
+			register: async (userData) => {
+                try {
+                    const response = await fetch(`${process.env.BACKEND_URL}/api/user`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(userData)
+                    });
+                    const data = await response.json();
+                    if (response.status === 201) {
+                        // Registro exitoso
+                        return { success: true, message: "Usuario registrado con éxito" };
+                    } else {
+                        // Registro fallido
+                        return { success: false, message: data.message || "Error en el registro" };
+                    }
+                } catch (error) {
+                    console.error("Error en el registro:", error);
+                    return { success: false, message: "Error en la conexión" };
+                }
+            },
 		}
 	};
 };
