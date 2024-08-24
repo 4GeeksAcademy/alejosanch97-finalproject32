@@ -29,7 +29,45 @@ def handle_hello():
 
     return jsonify(response_body), 200
 
-#Register user.
+#Get all tasks.
+@api.route('/task', methos=['GET'])
+def get_tasks():
+    task= Tasks.query.all()
+    task = list(map(lambda item: item.serialize(),task))
+    return jsonify(task), 200
+
+#Get one task.
+@api.route('/task/<int:id>', methods="GET")
+def get_one_task():
+    task = Tasks.query.filter_by(id=id).one_or_none()
+    return jsonify({"task":task})
+
+#Post task.
+@api.route('/task/<int:enterprise_id>', methods=['POST'])
+def add_task(enterprise_id):
+    data = request.json
+    task_name = data.get("name", None)
+    task_description = data.get("description", None)
+    task_due_date = data.get("due_date", None)
+    if task_name is None:
+        return jsonify({"error":"The task sould have a name"})
+    task = Tasks(
+        name= task_name,
+        description= task_description,
+        due_date = task_due_date,
+        status = "Pending.",
+        enterprise_id = enterprise_id
+    )
+
+    try:
+        db.session.add(task)
+        db.session.commit()
+        return jsonify({"message":"task created"})
+    except Exception as error:
+        print(error.args)
+        db.session.rollback()
+        return jsonify({"message":error})
+
 @api.route('/user', methods=["POST"])
 def add_user():
     body = request.json
@@ -100,6 +138,7 @@ def ad_project():
 def get_all_projects():
     projects = Projects()
     projects = projects.query.all()
+<<<<<<< HEAD
 
 #Login
 @api.route("/login", methods=["POST"])
@@ -120,3 +159,5 @@ def login():
                 return jsonify({"token":token}), 200
             else:
                 return jsonify({"message":"bad password"}), 400
+=======
+>>>>>>> feature/add-task
