@@ -12,7 +12,9 @@ export const Register = () => {
         username: "",
         email: "",
         password: "",
-        role_id: 1 // Asume un rol por defecto, ajusta según sea necesario
+        role_id: "",
+        enterprise_id: "",
+        organization_name: ""
     });
     
     const [error, setError] = useState("");
@@ -108,12 +110,51 @@ export const Register = () => {
                         required
                     />
                 </div>
+                <div className="mb-3">
+                    <label htmlFor="role_id" className="form-label">Rol</label>
+                    <select
+                        name="role_id"
+                        id="role_id"
+                        className="form-select"
+                        value={user.role_id}
+                        onChange={handleChange}
+                        required
+                    >
+                        <option value="">Selecciona un rol</option>
+                        <option value="1">Admin</option>
+                        <option value="2">Usuario</option>
+                    </select>
+                </div>
+                <div className="mb-3">
+                    <label htmlFor="enterprise_id" className="form-label">ID de la Empresa</label>
+                    <input
+                        type="number"
+                        name="enterprise_id"
+                        id="enterprise_id"
+                        placeholder="ID de la Empresa"
+                        value={user.enterprise_id}
+                        className="form-control"
+                        onChange={handleChange}
+                    />
+                </div>
+                <div className="mb-3">
+                    <label htmlFor="organization_name" className="form-label">Nombre de la Organización</label>
+                    <input
+                        type="text"
+                        name="organization_name"
+                        id="organization_name"
+                        placeholder="Nombre de la Organización"
+                        value={user.organization_name}
+                        className="form-control"
+                        onChange={handleChange}
+                    />
+                </div>
                 <button type="submit" className="btn btn-primary">Registrarse</button>
                 <div className="mt-3 text-center">
                     ¿Ya tienes una cuenta?
                     <Link to="/login" className="ms-2 text-decoration-none">
                         Inicia sesión aquí
-                    </Link>
+                    </Link>e
                 </div>
             </form>
         </div>

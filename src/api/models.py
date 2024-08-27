@@ -14,6 +14,7 @@ class Users(db.Model):
     role_id = db.Column(db.Integer, db.ForeignKey("roles.id"), nullable=True)
     salt = db.Column(db.String(180), nullable=False)
     enterprise_id = db.Column(db.Integer ,db.ForeignKey("enterprises.id"), nullable=True)
+    organization_name = db.Column(db.String(120), nullable=True)
     created_at = db.Column(db.DateTime(), default=datetime.now(timezone.utc), nullable=False)
 
 
@@ -28,6 +29,7 @@ class Users(db.Model):
             "last_name": self.last_name,
             "role_id": self.role_id,
             "enterprise_id": self.enterprise_id,
+            "organization_name": self.organization_name,
             "created_at": self.created_at
         }
 
@@ -45,9 +47,10 @@ class Projects(db.Model):
             "id": self.id,
             "name": self.name,
             "description": self.description,
+            "start_date": self.start_date,
             "end_date": self.end_date,
-            "creation_date": self.creation_date,
-            "enterprise_id": self.enterprise_id
+            "enterprise_id": self.enterprise_id,
+            "user_id": self.user_id
         }
 
 class Enterprises(db.Model):
@@ -65,6 +68,7 @@ class Enterprises(db.Model):
 class Tasks(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey("projects.id"), unique=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     name = db.Column(db.String(120), unique=False)
     description = db.Column(db.String(120), unique=False)
     status = db.Column(db.String(120), unique=False)

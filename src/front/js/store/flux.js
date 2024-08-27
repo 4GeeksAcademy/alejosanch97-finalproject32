@@ -15,7 +15,9 @@ const getState = ({ getStore, getActions, setStore }) => {
 				}
 			],
             token: localStorage.getItem("token") || null,
-            user: localStorage.getItem("user")|| null
+            user: localStorage.getItem("user")|| null,
+			organizationUsers: [],
+			projects: [],
 		},
 		actions: {
 			// Use getActions to call a function within a fuction
@@ -76,26 +78,122 @@ const getState = ({ getStore, getActions, setStore }) => {
 				}
 			},
 
-            getUserLogin: async() =>{
-                try{
-                    const response = await fetch('${process.env.BACKEND_URL}/api/user', {
-                        method:'GET',
+            getUserLogin: async () => {
+                try {
+                    const store = getStore();
+                    const response = await fetch(`${process.env.BACKEND_URL}/api/user`, {
+                        method: 'GET',
                         headers: {
-                            "Authorization":'Bearer ${getStore().token}'
+                            "Authorization": `Bearer ${store.token}`
                         }
-                    })
-                    const data = await response.json()
-                    if (response.ok){
-                        setStrore({
-                            user:data
-                        })
-                        localStorage.setItem("user", JSON.stringify(data))
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        setStore({
+                            user: data
+                        });
+                        localStorage.setItem("user", JSON.stringify(data));
+                        await getActions().getUserTasks();
+                    } else {
+                        throw new Error("Failed to fetch user data");
                     }
-                }
-                catch (error){
-                    console.log(error)
+                } catch (error) {
+                    console.error("Error fetching user data:", error);
                 }
             },
+
+			createProject: async (projectData) => {
+				const store = getStore();
+				try {
+					const response = await fetch(`${process.env.BACKEND_URL}/api/projects`, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'Authorization': `Bearer ${store.token}`
+						},
+						body: JSON.stringify(projectData)
+					});
+			
+					if (!response.ok) {
+						throw new Error('Failed to create project');
+					}
+			
+					const data = await response.json();
+			
+					// Actualizar el store con el nuevo proyecto
+					setStore({ 
+						projects: [...store.projects, data]
+					});
+			
+					return { success: true, project: data };
+				} catch (error) {
+					console.error('Error creating project:', error);
+					return { success: false, error: error.message };
+				}
+			},
+			
+			getProjects: async () => {
+				const store = getStore();
+				try {
+					const response = await fetch(`${process.env.BACKEND_URL}/api/projects`, {
+						method: 'GET',
+						headers: {
+							'Authorization': `Bearer ${store.token}`
+						}
+					});
+			
+					if (!response.ok) {
+						throw new Error('Failed to fetch projects');
+					}
+			
+					const data = await response.json();
+					setStore({ projects: data });
+					return data;
+				} catch (error) {
+					console.error('Error fetching projects:', error);
+					return [];
+				}
+			},
+
+            getUserTasks: async () => {
+                try {
+                    const store = getStore();
+                    const response = await fetch(`${process.env.BACKEND_URL}/api/task`, {
+                        method: 'GET',
+                        headers: {
+                            "Authorization": `Bearer ${store.token}`
+                        }
+                    });
+                    if (response.ok) {
+                        const tasksData = await response.json();
+                        setStore({
+                            tasks: tasksData
+                        });
+                    } else {
+                        throw new Error("Failed to fetch user tasks");
+                    }
+                } catch (error) {
+                    console.error("Error fetching user tasks:", error);
+                }
+            },
+
+			getOrganizationUsers: async () => {
+				const store = getStore();
+				try {
+					const resp = await fetch(process.env.BACKEND_URL + "/api/organization-users", {
+						method: "GET",
+						headers: {
+							"Content-Type": "application/json",
+							"Authorization": "Bearer " + store.token
+						}
+					});
+					const data = await resp.json();
+					setStore({ organizationUsers: data });
+					return data;
+				} catch (error) {
+					console.error("Error loading organization users from backend", error);
+				}
+			},
 
 			register: async (userData) => {
                 try {

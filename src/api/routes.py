@@ -2,9 +2,10 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 from flask import Flask, request, jsonify, url_for, Blueprint
-from api.models import db, Users, Projects, Tasks
+from api.models import db, Users, Projects, Tasks, Enterprises
 from api.utils import generate_sitemap, APIException, set_password
 from flask_cors import CORS
+from datetime import datetime, timezone
 
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import check_password_hash
@@ -31,10 +32,11 @@ def handle_hello():
 
 #Get all tasks.
 @api.route('/task', methods=['GET'])
-def get_tasks():
-    task= Tasks.query.all()
-    task = list(map(lambda item: item.serialize(),task))
-    return jsonify(task), 200
+@jwt_required()
+def get_user_tasks():
+    current_user_id = get_jwt_identity()
+    tasks = Tasks.query.filter_by(user_id=current_user_id).all()
+    return jsonify([task.serialize() for task in tasks]), 200
 
 #Get one task.
 @api.route('/task/<int:id>', methods=['GET'])
@@ -77,6 +79,8 @@ def add_user():
     email = body.get("email", None)
     password = body.get("password", None)
     role_id = body.get("role_id", None)
+    enterprise_id = body.get("enterprise_id", None)
+    organization_name = body.get("organization_name", None)
 
     if email is None or password is None or last_name is None:
         return jsonify("you need an the email and a password"), 400
@@ -84,6 +88,18 @@ def add_user():
         user = Users.query.filter_by(email=email).one_or_none()
         if user is not None :
             return jsonify("user existe"), 400
+        
+        # Verificar si la empresa existe, si no, crearla
+    if enterprise_id:
+        enterprise = Enterprises.query.get(enterprise_id)
+        if not enterprise:
+            if organization_name:
+                new_enterprise = Enterprises(id=enterprise_id, name=organization_name)
+                db.session.add(new_enterprise)
+                db.session.flush()  # Esto asigna un ID si es auto-incrementable
+            else:
+                return jsonify({"message": "La empresa no existe y no se proporcionó un nombre para crearla"}), 400
+            
         salt = b64encode(os.urandom(32)).decode("utf-8")
         password = set_password(password, salt)
         user = Users(
@@ -93,6 +109,8 @@ def add_user():
                 password=password,
                 first_name = first_name,
                 last_name=last_name,
+                enterprise_id=enterprise_id,
+                organization_name=organization_name,
                 salt=salt)
         try:
             db.session.add(user)
@@ -102,6 +120,18 @@ def add_user():
             print(error.args)
             db.session.rollback()
             return jsonify({"message":f"error: {error}"}), 500
+
+#get user
+@api.route('/user', methods=['GET'])
+@jwt_required()
+def get_current_user():
+    current_user_id = get_jwt_identity()
+    user = Users.query.get(current_user_id)
+    if user:
+        return jsonify(user.serialize()), 200
+    else:
+        return jsonify({"message": "User not found"}), 404
+
 
 #get all users
 @api.route('/users', methods=["GET"])
@@ -123,21 +153,63 @@ def get_user(user_id):
     else:
         return jsonify(user.serialize())
 
-#add projects
-@api.route('/project', methods=["POST"])
-def ad_project():
-    body = request.json
+#get users by organization
+@api.route('/organization-users', methods=['GET'])
+@jwt_required()
+def get_organization_users():
+    current_user_id = get_jwt_identity()
+    current_user = Users.query.get(current_user_id)
+    if not current_user:
+        return jsonify({"message": "Usuario no encontrado"}), 404
+    
+    organization_users = Users.query.filter_by(organization_name=current_user.organization_name).all()
+    
+    users_data = [{
+        "id": user.id,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email,
+        "username": user.username,
+        "role_id": user.role_id
+    } for user in organization_users]
+    
+    return jsonify(users_data), 200
 
-    name =  body.get("name", None)
-    description = body.get("description", None)
-    start_date = body.get("start_date", None)
-    end_date = body.get("end_date", None)
+#projects
+# Get all projects for the current user
+@api.route('/projects', methods=['GET'])
+@jwt_required()
+def get_user_projects():
+    current_user_id = get_jwt_identity()
+    projects = Projects.query.filter_by(user_id=current_user_id).all()
+    return jsonify([project.serialize() for project in projects]), 200
 
-# get all projects
-@api.route('/puejects', methods=["GET"])
-def get_all_projects():
-    projects = Projects()
-    projects = projects.query.all()
+# Create a new project
+@api.route('/projects', methods=['POST'])
+@jwt_required()
+def create_project():
+    current_user_id = get_jwt_identity()
+    data = request.json
+
+    if not all(key in data for key in ('name', 'description', 'end_date', 'enterprise_id')):
+        return jsonify({"message": "Missing required fields"}), 400
+
+    try:
+        new_project = Projects(
+            name=data['name'],
+            description=data['description'],
+            start_date=datetime.now(timezone.utc),
+            end_date=datetime.strptime(data['end_date'], '%Y-%m-%d').replace(tzinfo=timezone.utc),
+            enterprise_id=data['enterprise_id'],
+            user_id=current_user_id
+        )
+
+        db.session.add(new_project)
+        db.session.commit()
+        return jsonify(new_project.serialize()), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": "Error creating project", "error": str(e)}), 500
 
 #Login
 @api.route("/login", methods=["POST"])
