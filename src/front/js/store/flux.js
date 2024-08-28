@@ -1,3 +1,5 @@
+import { CreateTask } from "../component/CreateTask";
+
 const getState = ({ getStore, getActions, setStore }) => {
 	return {
 		store: {
@@ -119,6 +121,26 @@ const getState = ({ getStore, getActions, setStore }) => {
                     return { success: false, message: "Error en la conexión" };
                 }
             },
+
+			handleSubmit: async (event) => {
+				try {if(event.key === "Click"){
+					if (task.label.trim() !== ""){
+						const response = await fetch(`${process.env.BACKEND_URL}/`,{
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json"
+							}
+							body: JSON.stringify(task)
+						})
+						if(response.ok){
+							updateTask()
+							setTask(initailState)
+						}else{
+							console.log(error)
+						}
+					}
+				}}
+			}
 		}
 	};
 };

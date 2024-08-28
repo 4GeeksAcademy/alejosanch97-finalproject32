@@ -32,25 +32,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 MIGRATE = Migrate(app, db, compare_type=True)
 db.init_app(app)
 
-#creacion de roles
-def create_roles():
-    roles = [
-        {"id": 1, "name": "Usuario"},
-        {"id": 2, "name": "Administrador"},
-        # Agrega más roles según sea necesario
-    ]
-    
-    for role in roles:
-        existing_role = Roles.query.get(role["id"])
-        if not existing_role:
-            new_role = Roles(id=role["id"], name=role["name"])
-            db.session.add(new_role)
-    
-    db.session.commit()
 
-# Llama a create_roles dentro del contexto de la aplicación
-with app.app_context():
-    create_roles()
+
+
 
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")   # Change this!
 jwt = JWTManager(app)

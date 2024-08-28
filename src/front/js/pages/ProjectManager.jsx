@@ -1,4 +1,6 @@
 import React from "react";
+import { Link } from "react-router-dom";
+
 
 export const ProjectManager = () => {
     return (
@@ -34,7 +36,8 @@ export const ProjectManager = () => {
                     <div className="d-flex gap-3">
                         <button className="btn btn-primary">Eliminar proyecto</button>
                         <button className="btn btn-primary">Modificar proyecto</button>
-                        <button className="btn btn-primary">Crear Tareas</button>
+
+                        <Link className="" to="/createtask"><button className="btn btn-primary">Crear Tareas</button></Link>
                         <button className="btn btn-primary">Agregar Usuarios</button>
                     </div>
                 </div>
