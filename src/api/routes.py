@@ -205,18 +205,38 @@ def create_task(project_id):
     current_user_id = get_jwt_identity()
     data = request.json
 
+    # Verificar si el proyecto existe y pertenece al usuario o su empresa
+    project = Projects.query.filter_by(id=project_id, enterprise_id=Users.query.get(current_user_id).enterprise_id).first()
+    if not project:
+        return jsonify({"message": "Project not found or access denied"}), 404
+
     new_task = Tasks(
         project_id=project_id,
         user_id=current_user_id,
         name=data['name'],
-        description=data['description'],
-        due_date=datetime.fromisoformat(data['due_date'])
+        description=data.get('description', ''),
+        status=data.get('status', 'Pending'),
+        due_date=datetime.fromisoformat(data['due_date']),
+        creation_date=datetime.now(timezone.utc)
     )
 
     db.session.add(new_task)
     db.session.commit()
 
     return jsonify(new_task.serialize()), 201
+
+@api.route('/projects/<int:project_id>/tasks', methods=['GET'])
+@jwt_required()
+def get_project_tasks(project_id):
+    current_user_id = get_jwt_identity()
+
+    # Verificar si el proyecto existe y pertenece al usuario o su empresa
+    project = Projects.query.filter_by(id=project_id, enterprise_id=Users.query.get(current_user_id).enterprise_id).first()
+    if not project:
+        return jsonify({"message": "Project not found or access denied"}), 404
+
+    tasks = Tasks.query.filter_by(project_id=project_id).all()
+    return jsonify([task.serialize() for task in tasks]), 200
 
 @api.route('/tasks/<int:task_id>/subtasks', methods=['POST'])
 @jwt_required()
