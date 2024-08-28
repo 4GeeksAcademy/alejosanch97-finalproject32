@@ -14,16 +14,18 @@ export const Profile = () => {
         username: "",
         email: "",
         password: "",
-        role_id: "2", // Por defecto, rol de usuario
-        enterprise_id: store.user.enterprise_id, // Usa el enterprise_id del admin actual
-        organization_name: store.user.organization_name
+        role_id: 2, // Por defecto, rol de usuario
+        enterprise_id: store.user ? store.user.enterprise_id : null,
+        organization_name: store.user ? store.user.organization_name : null
     });
+
     const [newProject, setNewProject] = useState({
         name: "",
         description: "",
+        start_date: "",
         end_date: "",
-        user_id: store.user.id,
-        enterprise_id: store.user.enterprise_id
+        user_id: store.user ? store.user.id : null,
+        enterprise_id: store.user ? store.user.enterprise_id : null
     });
 
     const handleInputChange = (e) => {
@@ -57,20 +59,36 @@ export const Profile = () => {
     const handleCreateUser = async (e) => {
         e.preventDefault();
         try {
-            const result = await actions.register(newUser);
+            const userToCreate = {
+                user: {
+                    ...newUser,
+                    role_id: 2,
+                    enterprise_id: store.user.enterprise_id
+                },
+                enterprise: {
+                    name: store.user.organization_name,
+                    // Asumimos que ya tienes la dirección de la empresa en el store
+                    address: store.user.organization_address || "Dirección no especificada"
+                }
+            };
+            console.log("Datos del nuevo usuario:", userToCreate);
+            const result = await actions.registerUserAndEnterprise(userToCreate);
             if (result.success) {
-                alert("Usuario creado con éxito");
+                alert(result.message || "Usuario creado con éxito");
                 setShowCreateUser(false);
+                // Reiniciar el formulario
                 setNewUser({
                     first_name: "",
                     last_name: "",
                     username: "",
                     email: "",
                     password: "",
-                    role_id: "2",
+                    role_id: 2,
                     enterprise_id: store.user.enterprise_id,
                     organization_name: store.user.organization_name
                 });
+                // Actualizar la lista de usuarios de la organización
+                await actions.getOrganizationUsers();
             } else {
                 alert("Error al crear usuario: " + result.message);
             }
@@ -81,19 +99,32 @@ export const Profile = () => {
 
     const handleCreateProject = async (e) => {
         e.preventDefault();
+        if (!newProject.name || !newProject.description || !newProject.start_date || !newProject.end_date) {
+            alert("Todos los campos son requeridos");
+            return;
+        }
+        if (newProject.description.length > 5000) {  // Ajusta este número según tus necesidades
+            alert("La descripción es demasiado larga. Por favor, acórtala.");
+            return;
+        }
         try {
-            const result = await actions.createProject(newProject);
+            const projectToCreate = {
+                ...newProject,
+                enterprise_id: store.user.enterprise_id
+            };
+            console.log("Datos del nuevo proyecto:", projectToCreate);
+            const result = await actions.createProject(projectToCreate);
             if (result.success) {
                 alert("Proyecto creado con éxito");
                 setShowCreateProject(false);
                 setNewProject({
                     name: "",
                     description: "",
+                    start_date: "",
                     end_date: "",
                     user_id: store.user.id,
                     enterprise_id: store.user.enterprise_id
                 });
-                // Aquí podrías actualizar la lista de proyectos si la tienes
             } else {
                 alert("Error al crear proyecto: " + result.message);
             }
@@ -162,7 +193,6 @@ export const Profile = () => {
             <div className="card mt-4">
                 <div className="card-body">
                     <h3 className="card-title">Usuarios de la Organización</h3>
-                    {(store.user.role_id === 1 || store.user.role_id === "1") && (
                         <table className="table">
                         <thead>
                             <tr>
@@ -185,12 +215,11 @@ export const Profile = () => {
                             ))}
                         </tbody>
                     </table>    
-                    )}
                 </div>
             </div>
             {showCreateUser && (
                 <div className="mt-4">
-                    <h3>Crear Nuevo Usuario (Rol 2)</h3>
+                    <h3>Crear Nuevo Usuario</h3>
                     <form onSubmit={handleCreateUser} className="d-flex flex-column gap-3 border p-3 rounded">
                         <div className="mb-3">
                             <label htmlFor="first_name" className="form-label">Nombre</label>
@@ -285,6 +314,18 @@ export const Profile = () => {
                                 id="description"
                                 placeholder="Descripción del Proyecto"
                                 value={newProject.description}
+                                className="form-control"
+                                onChange={handleProjectInputChange}
+                                required
+                            />
+                        </div>
+                        <div className="mb-3">
+                            <label htmlFor="description" className="form-label">Fecha de Inicio</label>
+                            <input
+                                type="date"
+                                name="start_date"
+                                id="start_date"
+                                value={newProject.start_date}
                                 className="form-control"
                                 onChange={handleProjectInputChange}
                                 required

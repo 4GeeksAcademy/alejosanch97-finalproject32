@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: b5a4b5177cc3
+Revision ID: 50a4c1ac84c5
 Revises: 
-Create Date: 2024-08-24 15:31:10.417111
+Create Date: 2024-08-27 21:23:04.476798
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'b5a4b5177cc3'
+revision = '50a4c1ac84c5'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -39,6 +39,7 @@ def upgrade():
     sa.Column('role_id', sa.Integer(), nullable=True),
     sa.Column('salt', sa.String(length=180), nullable=False),
     sa.Column('enterprise_id', sa.Integer(), nullable=True),
+    sa.Column('organization_name', sa.String(length=120), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['enterprise_id'], ['enterprises.id'], ),
     sa.ForeignKeyConstraint(['role_id'], ['roles.id'], ),
@@ -69,12 +70,14 @@ def upgrade():
     op.create_table('tasks',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('project_id', sa.Integer(), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=120), nullable=True),
     sa.Column('description', sa.String(length=120), nullable=True),
     sa.Column('status', sa.String(length=120), nullable=True),
     sa.Column('due_date', sa.DateTime(), nullable=True),
     sa.Column('creation_date', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['project_id'], ['projects.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('sub_tasks',

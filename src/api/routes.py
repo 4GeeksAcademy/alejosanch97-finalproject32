@@ -2,7 +2,7 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 from flask import Flask, request, jsonify, url_for, Blueprint
-from api.models import db, Users, Projects, Tasks, Enterprises
+from api.models import db, Users, Projects, Tasks, Enterprises, Roles, Sub_tasks, ProjectMembers
 from api.utils import generate_sitemap, APIException, set_password
 from flask_cors import CORS
 from datetime import datetime, timezone
@@ -21,6 +21,25 @@ CORS(api)
 def check_password(hash_password, password, salt):
     return check_password_hash(hash_password, f"{password}{salt}")
 
+#ruta roles
+@api.route('/default_roles', methods=['POST'])
+def create_roles():
+    roles = [
+        {"name": "Usuario"},
+        {"name": "Administrador"},
+        # Agrega más roles según sea necesario
+    ]
+    
+    for role in roles:
+        existing_role = Roles.query.filter_by(name=role["name"]).first()
+        if not existing_role:
+            new_role = Roles(name=role["name"])
+            db.session.add(new_role)
+    
+    db.session.commit()
+    return jsonify({"message":"rol creado"})
+
+
 @api.route('/hello', methods=['POST', 'GET'])
 def handle_hello():
 
@@ -30,96 +49,58 @@ def handle_hello():
 
     return jsonify(response_body), 200
 
-#Get all tasks.
-@api.route('/task', methods=['GET'])
-@jwt_required()
-def get_user_tasks():
-    current_user_id = get_jwt_identity()
-    tasks = Tasks.query.filter_by(user_id=current_user_id).all()
-    return jsonify([task.serialize() for task in tasks]), 200
-
-#Get one task.
-@api.route('/task/<int:id>', methods=['GET'])
-def get_one_task():
-    task = Tasks.query.filter_by(id=id).one_or_none()
-    return jsonify({"task":task})
-
-#Post task.
-@api.route('/task/<int:enterprise_id>', methods=['POST'])
-def add_task(enterprise_id):
-    data = request.json
-    task_name = data.get("name", None)
-    task_description = data.get("description", None)
-    task_due_date = data.get("due_date", None)
-    if task_name is None:
-        return jsonify({"error":"The task sould have a name"})
-    task = Tasks(
-        name= task_name,
-        description= task_description,
-        due_date = task_due_date,
-        status = "Pending.",
-        enterprise_id = enterprise_id
-    )
-
-    try:
-        db.session.add(task)
-        db.session.commit()
-        return jsonify({"message":"task created"})
-    except Exception as error:
-        print(error.args)
-        db.session.rollback()
-        return jsonify({"message":error})
-
+#ruta para añadir un usuario
 @api.route('/user', methods=["POST"])
 def add_user():
     body = request.json
-    first_name = body.get("first_name", None)
-    last_name = body.get("last_name", None)
-    username = body.get("username", None)
-    email = body.get("email", None)
-    password = body.get("password", None)
-    role_id = body.get("role_id", None)
-    enterprise_id = body.get("enterprise_id", None)
-    organization_name = body.get("organization_name", None)
+    user_data = body.get("user", {})
+    enterprise_data = body.get("enterprise", {})
 
-    if email is None or password is None or last_name is None:
-        return jsonify("you need an the email and a password"), 400
-    else:
-        user = Users.query.filter_by(email=email).one_or_none()
-        if user is not None :
-            return jsonify("user existe"), 400
-        
-        # Verificar si la empresa existe, si no, crearla
-    if enterprise_id:
-        enterprise = Enterprises.query.get(enterprise_id)
+    # Validación de campos requeridos
+    if not all([user_data.get("email"), user_data.get("password"), user_data.get("last_name")]):
+        return jsonify({"message": "Se requieren email, contraseña y apellido"}), 400
+
+    # Verificar si el usuario ya existe
+    existing_user = Users.query.filter_by(email=user_data.get("email")).one_or_none()
+    if existing_user:
+        return jsonify({"message": "El usuario ya existe"}), 400
+
+    # Crear la empresa si no existe
+    enterprise = None
+    if enterprise_data:
+        enterprise = Enterprises.query.filter_by(name=enterprise_data.get("name")).first()
         if not enterprise:
-            if organization_name:
-                new_enterprise = Enterprises(id=enterprise_id, name=organization_name)
-                db.session.add(new_enterprise)
-                db.session.flush()  # Esto asigna un ID si es auto-incrementable
-            else:
-                return jsonify({"message": "La empresa no existe y no se proporcionó un nombre para crearla"}), 400
-            
+            enterprise = Enterprises(
+                name=enterprise_data.get("name"),
+                address=enterprise_data.get("address")
+            )
+            db.session.add(enterprise)
+            db.session.flush()  # Asigna un ID a la empresa
+
+    # Crear el nuevo usuario
+    try:
         salt = b64encode(os.urandom(32)).decode("utf-8")
-        password = set_password(password, salt)
-        user = Users(
-                role_id = role_id,
-                email=email,
-                username= username,
-                password=password,
-                first_name = first_name,
-                last_name=last_name,
-                enterprise_id=enterprise_id,
-                organization_name=organization_name,
-                salt=salt)
-        try:
-            db.session.add(user)
-            db.session.commit()
-            return jsonify({"message":"User created"}), 201
-        except Exception as error:
-            print(error.args)
-            db.session.rollback()
-            return jsonify({"message":f"error: {error}"}), 500
+        hashed_password = set_password(user_data.get("password"), salt)
+
+        new_user = Users(
+            role_id=user_data.get("role_id"),
+            email=user_data.get("email"),
+            username=user_data.get("username"),
+            password=hashed_password,
+            first_name=user_data.get("first_name"),
+            last_name=user_data.get("last_name"),
+            enterprise_id=enterprise.id if enterprise else None,
+            salt=salt
+        )
+
+        db.session.add(new_user)
+        db.session.commit()
+        return jsonify({"message": "Usuario y empresa creados exitosamente"}), 201
+
+    except Exception as error:
+        db.session.rollback()
+        print(f"Error al crear usuario: {str(error)}")
+        return jsonify({"message": f"Error al crear usuario: {str(error)}"}), 500
 
 #get user
 @api.route('/user', methods=['GET'])
@@ -128,9 +109,11 @@ def get_current_user():
     current_user_id = get_jwt_identity()
     user = Users.query.get(current_user_id)
     if user:
-        return jsonify(user.serialize()), 200
+        user_data = user.serialize()
+        user_data['organization_name'] = user.enterprise.name  # Añadimos el nombre de la organización
+        return jsonify(user_data), 200
     else:
-        return jsonify({"message": "User not found"}), 404
+        return jsonify({"message": "Usuario no encontrado"}), 404
 
 
 #get all users
@@ -162,7 +145,7 @@ def get_organization_users():
     if not current_user:
         return jsonify({"message": "Usuario no encontrado"}), 404
     
-    organization_users = Users.query.filter_by(organization_name=current_user.organization_name).all()
+    organization_users = Users.query.filter_by(enterprise_id=current_user.enterprise_id).all()
     
     users_data = [{
         "id": user.id,
@@ -179,37 +162,110 @@ def get_organization_users():
 # Get all projects for the current user
 @api.route('/projects', methods=['GET'])
 @jwt_required()
-def get_user_projects():
+def get_projects():
     current_user_id = get_jwt_identity()
-    projects = Projects.query.filter_by(user_id=current_user_id).all()
+    user = Users.query.get(current_user_id)
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    projects = Projects.query.filter_by(enterprise_id=user.enterprise_id).all()
     return jsonify([project.serialize() for project in projects]), 200
 
 # Create a new project
 @api.route('/projects', methods=['POST'])
 @jwt_required()
-def create_project():
+def add_project():
     current_user_id = get_jwt_identity()
     data = request.json
 
-    if not all(key in data for key in ('name', 'description', 'end_date', 'enterprise_id')):
-        return jsonify({"message": "Missing required fields"}), 400
+    # Obtén el enterprise_id del usuario actual si no se proporciona en los datos
+    if 'enterprise_id' not in data:
+        current_user = Users.query.get(current_user_id)
+        enterprise_id = current_user.enterprise_id
+    else:
+        enterprise_id = data['enterprise_id']
 
-    try:
-        new_project = Projects(
-            name=data['name'],
-            description=data['description'],
-            start_date=datetime.now(timezone.utc),
-            end_date=datetime.strptime(data['end_date'], '%Y-%m-%d').replace(tzinfo=timezone.utc),
-            enterprise_id=data['enterprise_id'],
-            user_id=current_user_id
-        )
+    new_project = Projects(
+        name=data['name'],
+        description=data['description'],
+        start_date=datetime.fromisoformat(data['start_date']),
+        end_date=datetime.fromisoformat(data['end_date']),
+        enterprise_id=data['enterprise_id'],
+        user_id=current_user_id
+    )
 
-        db.session.add(new_project)
-        db.session.commit()
-        return jsonify(new_project.serialize()), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"message": "Error creating project", "error": str(e)}), 500
+    db.session.add(new_project)
+    db.session.commit()
+
+    return jsonify(new_project.serialize()), 201
+
+@api.route('/projects/<int:project_id>/tasks', methods=['POST'])
+@jwt_required()
+def create_task(project_id):
+    current_user_id = get_jwt_identity()
+    data = request.json
+
+    new_task = Tasks(
+        project_id=project_id,
+        user_id=current_user_id,
+        name=data['name'],
+        description=data['description'],
+        due_date=datetime.fromisoformat(data['due_date'])
+    )
+
+    db.session.add(new_task)
+    db.session.commit()
+
+    return jsonify(new_task.serialize()), 201
+
+@api.route('/tasks/<int:task_id>/subtasks', methods=['POST'])
+@jwt_required()
+def create_subtask(task_id):
+    data = request.json
+
+    new_subtask = SubTasks(
+        task_id=task_id,
+        name=data['name'],
+        description=data['description'],
+        due_date=datetime.fromisoformat(data['due_date'])
+    )
+
+    db.session.add(new_subtask)
+    db.session.commit()
+
+    return jsonify(new_subtask.serialize()), 201
+
+@api.route('/projects/<int:project_id>/members', methods=['POST'])
+@jwt_required()
+def add_project_member(project_id):
+    data = request.json
+    user_id = data['user_id']
+
+    new_member = ProjectMembers(
+        project_id=project_id,
+        user_id=user_id
+    )
+
+    db.session.add(new_member)
+    db.session.commit()
+
+    return jsonify(new_member.serialize()), 201
+
+@api.route('/tasks/<int:task_id>', methods=['PATCH'])
+@jwt_required()
+def update_task_status(task_id):
+    data = request.json
+    task = Tasks.query.get(task_id)
+
+    if not task:
+        return jsonify({"message": "Task not found"}), 404
+
+    task.status = data['status']
+    db.session.commit()
+
+    return jsonify(task.serialize()), 200
+
+
 
 #Login
 @api.route("/login", methods=["POST"])
