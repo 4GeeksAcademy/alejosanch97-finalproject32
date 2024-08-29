@@ -52,6 +52,7 @@ export const Profile = () => {
                 await actions.getUserLogin();
             }
             await actions.getOrganizationUsers();
+            await actions.getProjects();
         };
         fetchData();
     }, [store.token]);
@@ -125,6 +126,7 @@ export const Profile = () => {
                     user_id: store.user.id,
                     enterprise_id: store.user.enterprise_id
                 });
+                await actions.getProjects(); // Refresh the projects list
             } else {
                 alert("Error al crear proyecto: " + result.message);
             }
@@ -188,6 +190,18 @@ export const Profile = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+            <div className="card mt-4">
+                <div className="card-body">
+                    <h3 className="card-title">Mis Proyectos</h3>
+                    <ul className="list-group">
+                        {store.projects.map((project) => (
+                            <li key={project.id} className="list-group-item">
+                                {project.name} - {project.description}
+                            </li>
+                        ))}
+                    </ul>
                 </div>
             </div>
             <div className="card mt-4">

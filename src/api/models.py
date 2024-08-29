@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone
 
+
 db = SQLAlchemy()
 
 class Users(db.Model):
@@ -33,7 +34,6 @@ class Users(db.Model):
             "last_name": self.last_name,
             "role_id": self.role_id,
             "enterprise_id": self.enterprise_id,
-            "organization_name": self.enterprise.name,
             "created_at": self.created_at
         }
 
@@ -135,10 +135,20 @@ class Sub_tasks(db.Model):
             
         }
 
-class ProjectMembers(db.Model):
+class Roles(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    project_id = db.Column(db.Integer, db.ForeignKey("projects.id"), primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), primary_key=True)
+    name = db.Column(db.String(120))
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+        }
+    
+class ProjectMembers(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
     project = db.relationship('Projects', back_populates='members')
     user = db.relationship('Users')
@@ -148,14 +158,4 @@ class ProjectMembers(db.Model):
             "id": self.id,
             "project_id": self.project_id,
             "user_id": self.user_id
-        }
-
-class Roles(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120))
-
-    def serialize(self):
-        return {
-            "id": self.id,
-            "name": self.name,
         }

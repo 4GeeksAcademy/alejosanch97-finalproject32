@@ -245,12 +245,18 @@ const getState = ({ getStore, getActions, setStore }) => {
 					});
 					const data = await response.json();
 					if (response.status === 201) {
-						const updatedProjectMembers = {
-							...store.projectMembers,
-							[projectId]: [...(store.projectMembers[projectId] || []), data]
-						};
-						setStore({ projectMembers: updatedProjectMembers });
-						return { success: true, message: "Usuario añadido al proyecto con éxito", member: data };
+						// Obtener la información completa del usuario
+						const userInfo = store.organizationUsers.find(user => user.id === userId);
+						if (userInfo) {
+							const updatedProjectMembers = {
+								...store.projectMembers,
+								[projectId]: [...(store.projectMembers[projectId] || []), userInfo]
+							};
+							setStore({ projectMembers: updatedProjectMembers });
+							return { success: true, message: "Usuario añadido al proyecto con éxito" };
+						} else {
+							return { success: false, message: "Usuario no encontrado en la organización" };
+						}
 					} else {
 						return { success: false, message: data.message || "Error al añadir usuario al proyecto" };
 					}
@@ -292,19 +298,27 @@ const getState = ({ getStore, getActions, setStore }) => {
 							'Authorization': `Bearer ${store.token}`
 						}
 					});
-
+			
 					if (!response.ok) {
 						throw new Error('Failed to fetch project members');
 					}
-
-					const data = await response.json();
-					setStore({ 
-						projectMembers: {
-							...store.projectMembers,
-							[projectId]: data
-						}
+			
+					const members = await response.json();
+			
+					// Obtener la información completa de los usuarios
+					const fullMemberInfo = members.map(member => {
+						const userInfo = store.organizationUsers.find(user => user.id === member.user_id);
+						return userInfo || member; // Si no se encuentra, se mantiene la información original
 					});
-					return data;
+			
+					setStore(prevStore => ({
+						projectMembers: {
+							...prevStore.projectMembers,
+							[projectId]: fullMemberInfo
+						}
+					}));
+			
+					return fullMemberInfo;
 				} catch (error) {
 					console.error('Error fetching project members:', error);
 					return [];
@@ -313,7 +327,6 @@ const getState = ({ getStore, getActions, setStore }) => {
 
 			getProjects: async () => {
 				const store = getStore();
-				const actions = getActions();
 				try {
 					const response = await fetch(`${process.env.BACKEND_URL}/api/projects`, {
 						method: 'GET',
@@ -321,26 +334,27 @@ const getState = ({ getStore, getActions, setStore }) => {
 							'Authorization': `Bearer ${store.token}`
 						}
 					});
-
+			
 					if (!response.ok) {
 						throw new Error('Failed to fetch projects');
 					}
-
+			
 					const projects = await response.json();
-					setStore({ projects });
-
+					setStore({ projects: projects });
+			
 					// Fetch tasks and members for each project
 					for (let project of projects) {
-						await actions.getProjectTasks(project.id);
-						await actions.getProjectMembers(project.id);
+						await getActions().getProjectTasks(project.id);
+						await getActions().getProjectMembers(project.id);
 					}
-
+			
 					return projects;
 				} catch (error) {
 					console.error('Error fetching projects:', error);
 					return [];
 				}
 			},
+			
 
             getUserTasks: async () => {
 				const store = getStore();

@@ -168,7 +168,17 @@ def get_projects():
     if not user:
         return jsonify({"message": "User not found"}), 404
 
-    projects = Projects.query.filter_by(enterprise_id=user.enterprise_id).all()
+    # Si el usuario es administrador, obtiene todos los proyectos de la empresa
+    if user.role_id == 1:  # Asumiendo que role_id 1 es para administradores
+        projects = Projects.query.filter_by(enterprise_id=user.enterprise_id).all()
+    else:
+        # Para usuarios normales, obtener proyectos donde son miembros o creadores
+        projects = Projects.query.join(ProjectMembers, Projects.id == ProjectMembers.project_id)\
+            .filter(
+                (Projects.enterprise_id == user.enterprise_id) &
+                ((ProjectMembers.user_id == current_user_id) | (Projects.user_id == current_user_id))
+            ).all()
+
     return jsonify([project.serialize() for project in projects]), 200
 
 # Create a new project
@@ -255,22 +265,6 @@ def create_subtask(task_id):
 
     return jsonify(new_subtask.serialize()), 201
 
-@api.route('/projects/<int:project_id>/members', methods=['POST'])
-@jwt_required()
-def add_project_member(project_id):
-    data = request.json
-    user_id = data['user_id']
-
-    new_member = ProjectMembers(
-        project_id=project_id,
-        user_id=user_id
-    )
-
-    db.session.add(new_member)
-    db.session.commit()
-
-    return jsonify(new_member.serialize()), 201
-
 @api.route('/tasks/<int:task_id>', methods=['PATCH'])
 @jwt_required()
 def update_task_status(task_id):
@@ -285,7 +279,55 @@ def update_task_status(task_id):
 
     return jsonify(task.serialize()), 200
 
+# agregar usuarios a proyects
+@api.route('/projects/<int:project_id>/members', methods=['POST'])
+@jwt_required()
+def add_project_member(project_id):
+    current_user_id = get_jwt_identity()
+    data = request.json
+    user_id = data.get('user_id')
 
+    # Verificar si el proyecto existe y pertenece a la organización del usuario actual
+    project = Projects.query.filter_by(id=project_id, enterprise_id=Users.query.get(current_user_id).enterprise_id).first()
+    if not project:
+        return jsonify({"message": "Proyecto no encontrado o acceso denegado"}), 404
+
+    # Verificar si el usuario a añadir pertenece a la misma organización
+    user_to_add = Users.query.filter_by(id=user_id, enterprise_id=project.enterprise_id).first()
+    if not user_to_add:
+        return jsonify({"message": "Usuario no encontrado en la organización"}), 404
+
+    # Verificar si el usuario ya es miembro del proyecto
+    existing_member = ProjectMembers.query.filter_by(project_id=project_id, user_id=user_id).first()
+    if existing_member:
+        return jsonify({"message": "El usuario ya es miembro del proyecto"}), 400
+
+    new_member = ProjectMembers(project_id=project_id, user_id=user_id)
+    db.session.add(new_member)
+    db.session.commit()
+
+    return jsonify({"message": "Usuario añadido al proyecto exitosamente"}), 201
+
+@api.route('/projects/<int:project_id>/members', methods=['GET'])
+@jwt_required()
+def get_project_members(project_id):
+    current_user_id = get_jwt_identity()
+    
+    # Verificar si el proyecto existe y pertenece a la organización del usuario actual
+    project = Projects.query.filter_by(id=project_id, enterprise_id=Users.query.get(current_user_id).enterprise_id).first()
+    if not project:
+        return jsonify({"message": "Proyecto no encontrado o acceso denegado"}), 404
+
+    members = ProjectMembers.query.filter_by(project_id=project_id).all()
+    members_data = [{
+        "user_id": member.user_id,
+        "username": member.user.username,
+        "first_name": member.user.first_name,
+        "last_name": member.user.last_name,
+        "email": member.user.email
+    } for member in members]
+
+    return jsonify(members_data), 200
 
 #Login
 @api.route("/login", methods=["POST"])

@@ -3,10 +3,10 @@ import { Context } from "../store/appContext";
 
 export const ProjectManager = () => {
     const { store, actions } = useContext(Context);
-    const [newProjectName, setNewProjectName] = useState('');
     const [selectedProjectId, setSelectedProjectId] = useState(null);
-    const [newUserEmail, setNewUserEmail] = useState('');
     const [showTaskForm, setShowTaskForm] = useState(false);
+    const [showUserForm, setShowUserForm] = useState(null);
+    const [newUserEmail, setNewUserEmail] = useState('');
     const [newTask, setNewTask] = useState({
         name: '',
         description: '',
@@ -18,18 +18,6 @@ export const ProjectManager = () => {
         actions.getProjects();
         actions.getOrganizationUsers();
     }, []);
-
-    const handleCreateProject = async () => {
-        if (newProjectName) {
-            const result = await actions.createProject({ name: newProjectName });
-            if (result.success) {
-                setNewProjectName('');
-                actions.getProjects();
-            } else {
-                alert(result.message);
-            }
-        }
-    };
 
     const handleCreateTask = async (projectId) => {
         if (newTask.name && newTask.description && newTask.due_date) {
@@ -58,13 +46,17 @@ export const ProjectManager = () => {
                 const result = await actions.addUserToProject(projectId, user.id);
                 if (result.success) {
                     setNewUserEmail('');
+                    setShowUserForm(null);
+                    alert("Usuario agregado al proyecto exitosamente");
                     actions.getProjectMembers(projectId);
                 } else {
                     alert(result.message);
                 }
             } else {
-                alert("Usuario no encontrado");
+                alert("Usuario no encontrado en la organización");
             }
+        } else {
+            alert("Por favor, ingrese un correo electrónico");
         }
     };
 
@@ -79,6 +71,7 @@ export const ProjectManager = () => {
     return (
         <div className="container mt-4">
             <h2 className="mb-4">Gestor de Proyectos</h2>
+
             {store.projects.map((project) => (
                 <div key={project.id} className="card mb-4">
                     <div className="card-header">
@@ -104,7 +97,9 @@ export const ProjectManager = () => {
                         <h4>Miembros del proyecto:</h4>
                         <ul className="list-group mb-3">
                             {store.projectMembers[project.id]?.map(member => (
-                                <li key={member.id} className="list-group-item">{member.name}</li>
+                                <li key={member.user_id} className="list-group-item">
+                                    {member.first_name} {member.last_name} ({member.email})
+                                </li>
                             ))}
                         </ul>
                         <div className="mb-3">
@@ -112,8 +107,39 @@ export const ProjectManager = () => {
                                 setSelectedProjectId(project.id);
                                 setShowTaskForm(true);
                             }}>Agregar Tarea</button>
-                            <button className="btn btn-secondary" onClick={() => setSelectedProjectId(project.id)}>Agregar Usuario</button>
+                            <button 
+                                className="btn btn-secondary"
+                                onClick={() => setShowUserForm(project.id)}
+                            >
+                                Agregar Usuario al Proyecto
+                            </button>
                         </div>
+                        {showUserForm === project.id && (
+                            <div className="mb-3">
+                                <input
+                                    type="email"
+                                    className="form-control mb-2"
+                                    value={newUserEmail}
+                                    onChange={(e) => setNewUserEmail(e.target.value)}
+                                    placeholder="Email del usuario a agregar"
+                                />
+                                <button 
+                                    className="btn btn-primary me-2"
+                                    onClick={() => handleAddUserToProject(project.id)}
+                                >
+                                    Agregar Usuario
+                                </button>
+                                <button 
+                                    className="btn btn-secondary"
+                                    onClick={() => {
+                                        setShowUserForm(null);
+                                        setNewUserEmail('');
+                                    }}
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
+                        )}
                         {selectedProjectId === project.id && showTaskForm && (
                             <div className="card">
                                 <div className="card-body">
@@ -169,18 +195,6 @@ export const ProjectManager = () => {
                                         <button type="button" className="btn btn-secondary ms-2" onClick={() => setShowTaskForm(false)}>Cancelar</button>
                                     </form>
                                 </div>
-                            </div>
-                        )}
-                        {selectedProjectId === project.id && !showTaskForm && (
-                            <div className="mb-3">
-                                <input
-                                    type="email"
-                                    className="form-control"
-                                    value={newUserEmail}
-                                    onChange={(e) => setNewUserEmail(e.target.value)}
-                                    placeholder="Email del usuario a agregar"
-                                />
-                                <button className="btn btn-primary mt-2" onClick={() => handleAddUserToProject(project.id)}>Agregar Usuario</button>
                             </div>
                         )}
                     </div>
