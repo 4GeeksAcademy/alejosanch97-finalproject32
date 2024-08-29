@@ -19,6 +19,7 @@ const getState = ({ getStore, getActions, setStore }) => {
 			organizationUsers: [],
 			projects: [],
 			tasks: [],
+			taskDeimian:[],
 			projectMembers: {},
 		},
 		actions: {
@@ -282,6 +283,7 @@ const getState = ({ getStore, getActions, setStore }) => {
 
 					const data = await response.json();
 					setStore({ tasks: data });
+					
 					return data;
 				} catch (error) {
 					console.error('Error fetching project tasks:', error);
@@ -441,6 +443,25 @@ const getState = ({ getStore, getActions, setStore }) => {
                     return { success: false, message: "Error en la conexión" };
                 }
             },
+			getDeimian: async()=>{
+				try {
+					const response = await fetch(`${process.env.BACKEND_URL}/api/deimian`, {
+						method:"GET",
+						"headers": {
+							"Authorization": `Bearer ${getStore().token}`
+						}
+					})
+					const data = await response.json()
+					console.log(data, "apideimian")
+
+					setStore({
+						taskDeimian: data
+					})
+					
+				} catch (error) {
+					console.log(error)
+				}
+			}
 		}
 	};
 };
