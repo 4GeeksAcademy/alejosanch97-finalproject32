@@ -39,26 +39,26 @@ export const ProjectManager = () => {
         }
     };
 
-    const handleAddUserToProject = async (projectId) => {
-        if (newUserEmail) {
-            const user = store.organizationUsers.find(u => u.email === newUserEmail);
-            if (user) {
-                const result = await actions.addUserToProject(projectId, user.id);
-                if (result.success) {
-                    setNewUserEmail('');
-                    setShowUserForm(null);
-                    alert("Usuario agregado al proyecto exitosamente");
-                    actions.getProjectMembers(projectId);
-                } else {
-                    alert(result.message);
-                }
-            } else {
-                alert("Usuario no encontrado en la organización");
-            }
-        } else {
-            alert("Por favor, ingrese un correo electrónico");
-        }
-    };
+    // const handleAddUserToProject = async (projectId) => {
+    //     if (newUserEmail) {
+    //         const user = store.organizationUsers.find(u => u.email === newUserEmail);
+    //         if (user) {
+    //             const result = await actions.addUserToProject(projectId, user.id);
+    //             if (result.success) {
+    //                 setNewUserEmail('');
+    //                 setShowUserForm(null);
+    //                 alert("Usuario agregado al proyecto exitosamente");
+    //                 actions.getProjectMembers(projectId);
+    //             } else {
+    //                 alert(result.message);
+    //             }
+    //         } else {
+    //             alert("Usuario no encontrado en la organización");
+    //         }
+    //     } else {
+    //         alert("Por favor, ingrese un correo electrónico");
+    //     }
+    // };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -71,6 +71,27 @@ export const ProjectManager = () => {
     return (
         <div className="container mt-4">
             <h2 className="mb-4">Gestor de Proyectos</h2>
+
+            {
+                store.taskDeimian.map((item) => {
+                    return (
+                        <div>
+                            {item.name}<br />
+                            {item.task.map((ta) => {
+                                return (
+                                    <>
+                                        {ta.name}<br />
+                                    </>
+                                )
+                            })}
+                        </div>
+                    )
+                })
+            }
+
+
+
+            <p>*******************************************</p>
 
             {store.projects.map((project) => (
                 <div key={project.id} className="card mb-4">
@@ -107,7 +128,7 @@ export const ProjectManager = () => {
                                 setSelectedProjectId(project.id);
                                 setShowTaskForm(true);
                             }}>Agregar Tarea</button>
-                            <button 
+                            <button
                                 className="btn btn-secondary"
                                 onClick={() => setShowUserForm(project.id)}
                             >
@@ -123,13 +144,13 @@ export const ProjectManager = () => {
                                     onChange={(e) => setNewUserEmail(e.target.value)}
                                     placeholder="Email del usuario a agregar"
                                 />
-                                <button 
+                                <button
                                     className="btn btn-primary me-2"
-                                    onClick={() => handleAddUserToProject(project.id)}
+                                // onClick={() => handleAddUserToProject(project.id)}
                                 >
                                     Agregar Usuario
                                 </button>
-                                <button 
+                                <button
                                     className="btn btn-secondary"
                                     onClick={() => {
                                         setShowUserForm(null);

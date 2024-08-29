@@ -348,3 +348,18 @@ def login():
                 return jsonify({"token":token}), 200
             else:
                 return jsonify({"message":"bad password"}), 400
+
+
+#deimian
+@api.route('/deimian', methods=["GET"])
+@jwt_required()
+def get_task_project():
+    #validar
+    user = get_jwt_identity()
+
+    result = Projects.query.filter_by(user_id=user).all()
+
+    print(result)
+
+
+    return jsonify(list(map(lambda item: item.serialize(), result))), 201

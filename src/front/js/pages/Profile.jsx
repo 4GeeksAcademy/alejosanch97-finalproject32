@@ -42,19 +42,22 @@ export const Profile = () => {
         });
     };
 
+
+    // const fetchData = async () => {
+    //     if (!store.token) {
+    //         navigate("/login");
+    //         return;
+    //     }
+    //     if (!store.user) {
+    //         await actions.getUserLogin();
+    //     }
+    //     await actions.getOrganizationUsers();
+    //     await actions.getProjects();
+    // };
+
     useEffect(() => {
-        const fetchData = async () => {
-            if (!store.token) {
-                navigate("/login");
-                return;
-            }
-            if (!store.user) {
-                await actions.getUserLogin();
-            }
-            await actions.getOrganizationUsers();
-            await actions.getProjects();
-        };
-        fetchData();
+
+        // fetchData();
     }, [store.token]);
 
     const handleCreateUser = async (e) => {
@@ -155,11 +158,11 @@ export const Profile = () => {
                             <div className="d-flex justify-content-between align-items-center mb-4">
                                 <h3 className="text-secondary">Perfil de Usuario</h3>
                                 <div>
-                                {(store.user.role_id === 1 || store.user.role_id === "1") && (
-                                    <button className="btn btn-outline-primary me-2" onClick={() => setShowCreateUser(!showCreateUser)}>
-                                        Crear Usuario
-                                    </button>
-                                )}
+                                    {(store.user.role_id === 1 || store.user.role_id === "1") && (
+                                        <button className="btn btn-outline-primary me-2" onClick={() => setShowCreateUser(!showCreateUser)}>
+                                            Crear Usuario
+                                        </button>
+                                    )}
                                     <button className="btn btn-outline-success" onClick={() => setShowCreateProject(!showCreateProject)}>
                                         Crear Proyecto
                                     </button>
@@ -207,7 +210,7 @@ export const Profile = () => {
             <div className="card mt-4">
                 <div className="card-body">
                     <h3 className="card-title">Usuarios de la Organización</h3>
-                        <table className="table">
+                    <table className="table">
                         <thead>
                             <tr>
                                 <th>Nombre</th>
@@ -228,7 +231,7 @@ export const Profile = () => {
                                 </tr>
                             ))}
                         </tbody>
-                    </table>    
+                    </table>
                 </div>
             </div>
             {showCreateUser && (
