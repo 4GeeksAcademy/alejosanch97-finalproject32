@@ -26,13 +26,15 @@ export const Login = () => {
         event.preventDefault()
         try {
             const response = await actions.login(user)
-            if (response == true) {
+            if (response) {
                 setIsLoged(true)
+            } else {
+                setLoginFail(true)
             }
-            setLoginFail(true)
             console.log(response)
         } catch (error) {
             console.log(error)
+            setLoginFail(true)
         }
     }
 

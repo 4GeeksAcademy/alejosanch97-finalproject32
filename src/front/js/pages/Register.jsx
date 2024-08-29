@@ -5,31 +5,51 @@ import { Context } from "../store/appContext";
 export const Register = () => {
     const { actions } = useContext(Context);
     const navigate = useNavigate();
-    
-    const [user, setUser] = useState({
-        first_name: "",
-        last_name: "",
-        username: "",
-        email: "",
-        password: "",
-        role_id: 1 // Asume un rol por defecto, ajusta según sea necesario
+
+    const [formData, setFormData] = useState({
+        user: {
+            first_name: "",
+            last_name: "",
+            username: "",
+            email: "",
+            password: "",
+            role_id: "",
+        },
+        enterprise: {
+            name: "",
+            address: ""
+        }
     });
-    
+
     const [error, setError] = useState("");
 
     const handleChange = (event) => {
-        setUser({
-            ...user,
-            [event.target.name]: event.target.value
-        });
+        const { name, value } = event.target;
+        if (name === "name" || name === "address") {
+            setFormData(prevState => ({
+                ...prevState,
+                enterprise: {
+                    ...prevState.enterprise,
+                    [name]: value
+                }
+            }));
+        } else {
+            setFormData(prevState => ({
+                ...prevState,
+                user: {
+                    ...prevState.user,
+                    [name]: value
+                }
+            }));
+        }
     };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
         try {
-            const result = await actions.register(user);
+            const result = await actions.registerUserAndEnterprise(formData);
             if (result.success) {
-                navigate("/login");  // Redirige al login después de un registro exitoso
+                navigate("/login");
             } else {
                 setError(result.message);
             }
@@ -43,6 +63,7 @@ export const Register = () => {
             <form onSubmit={handleSubmit} className="d-flex flex-column gap-3 border p-3 rounded">
                 <h2 className="text-center mt-3">Registro</h2>
                 {error && <div className="alert alert-danger">{error}</div>}
+                <h4>Información del Usuario</h4>
                 <div className="mb-3">
                     <label htmlFor="first_name" className="form-label">Nombre</label>
                     <input
@@ -50,7 +71,7 @@ export const Register = () => {
                         name="first_name"
                         id="first_name"
                         placeholder="Nombre"
-                        value={user.first_name}
+                        value={formData.user.first_name}
                         className="form-control"
                         onChange={handleChange}
                         required
@@ -63,7 +84,7 @@ export const Register = () => {
                         name="last_name"
                         id="last_name"
                         placeholder="Apellido"
-                        value={user.last_name}
+                        value={formData.user.last_name}
                         className="form-control"
                         onChange={handleChange}
                         required
@@ -76,7 +97,7 @@ export const Register = () => {
                         name="username"
                         id="username"
                         placeholder="Nombre de usuario"
-                        value={user.username}
+                        value={formData.user.username}
                         className="form-control"
                         onChange={handleChange}
                         required
@@ -89,7 +110,7 @@ export const Register = () => {
                         name="email"
                         id="email"
                         placeholder="Email"
-                        value={user.email}
+                        value={formData.user.email}
                         className="form-control"
                         onChange={handleChange}
                         required
@@ -102,12 +123,55 @@ export const Register = () => {
                         name="password"
                         id="password"
                         placeholder="Contraseña"
-                        value={user.password}
+                        value={formData.user.password}
                         className="form-control"
                         onChange={handleChange}
                         required
                     />
                 </div>
+                <div className="mb-3">
+                    <label htmlFor="role_id" className="form-label">Rol</label>
+                    <select
+                        name="role_id"
+                        id="role_id"
+                        className="form-select"
+                        value={formData.user.role_id}
+                        onChange={handleChange}
+                        required
+                    >
+                        <option value="">Selecciona un rol</option>
+                        <option value="1">Admin</option>
+                        <option value="2">Usuario</option>
+                    </select>
+                </div>
+                <h4>Información de la Empresa</h4>
+                <div className="mb-3">
+                    <label htmlFor="name" className="form-label">Nombre de la Empresa</label>
+                    <input
+                        type="text"
+                        name="name"
+                        id="name"
+                        placeholder="Nombre de la Empresa"
+                        value={formData.enterprise.name}
+                        className="form-control"
+                        onChange={handleChange}
+                        required
+                    />
+                </div>
+                <div className="mb-3">
+                    <label htmlFor="address" className="form-label">Dirección de la Empresa</label>
+                    <input
+                        type="text"
+                        name="address"
+                        id="address"
+                        placeholder="Dirección de la Empresa"
+                        value={formData.enterprise.address}
+                        className="form-control"
+                        onChange={handleChange}
+                        required
+                    />
+                </div>
+
                 <button type="submit" className="btn btn-primary">Registrarse</button>
                 <div className="mt-3 text-center">
                     ¿Ya tienes una cuenta?
