@@ -46,6 +46,8 @@ export const ProjectManager = () => {
     const handleChangeTaskStatus = async (taskId, newStatus) => {
         await actions.updateTask(taskId, { status: newStatus });
         actions.getProjectTasks(selectedProject.id);
+        // Actualizar la productividad del usuario después de cambiar el estado de la tarea
+        actions.getUserProductivity();
     };
 
     const handleAddMember = async () => {

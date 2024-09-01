@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify, url_for, Blueprint
 from api.models import db, Users, Projects, Tasks, Enterprises, Roles, Sub_tasks, ProjectMembers
 from api.utils import generate_sitemap, APIException, set_password
 from flask_cors import CORS
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import check_password_hash
@@ -527,10 +527,15 @@ def update_or_delete_task(task_id):
 
     if request.method == 'PUT':
         data = request.json
+        old_status = task.status
         task.name = data.get('name', task.name)
         task.description = data.get('description', task.description)
         task.status = data.get('status', task.status)
         task.due_date = datetime.fromisoformat(data['due_date']) if 'due_date' in data else task.due_date
+
+        if old_status != task.status:
+            task.last_status_change_by = current_user_id
+            task.last_status_change_at = datetime.utcnow()
 
         db.session.commit()
         return jsonify(task.serialize()), 200
@@ -539,5 +544,80 @@ def update_or_delete_task(task_id):
         db.session.delete(task)
         db.session.commit()
         return jsonify({"message": "Task deleted successfully"}), 200
+    
+#dashboard 
+
+@api.route('/dashboard/project-progress', methods=['GET'])
+@jwt_required()
+def get_project_progress():
+    projects = Projects.query.filter_by(enterprise_id=get_jwt_identity()).all()
+    progress_data = []
+    for project in projects:
+        tasks = Tasks.query.filter_by(project_id=project.id).all()
+        total_tasks = len(tasks)
+        completed_tasks = len([task for task in tasks if task.status == 'Completed'])
+        progress = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
+        progress_data.append({
+            'project_name': project.name,
+            'progress': progress
+        })
+    return jsonify(progress_data)
+
+@api.route('/dashboard/task-completion-rate', methods=['GET'])
+@jwt_required()
+def get_task_completion_rate():
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=30)
+    tasks = Tasks.query.filter(Tasks.created_at.between(start_date, end_date)).all()
+    completion_data = {}
+    for task in tasks:
+        week = task.created_at.isocalendar()[1]
+        if week not in completion_data:
+            completion_data[week] = {'total': 0, 'completed': 0}
+        completion_data[week]['total'] += 1
+        if task.status == 'Completed':
+            completion_data[week]['completed'] += 1
+    
+    result = [{'week': week, 'rate': data['completed'] / data['total'] if data['total'] > 0 else 0} 
+              for week, data in completion_data.items()]
+    return jsonify(result)
+
+@api.route('/dashboard/task-distribution', methods=['GET'])
+@jwt_required()
+def get_task_distribution():
+    tasks = Tasks.query.filter_by(enterprise_id=get_jwt_identity()).all()
+    distribution = {'Pending': 0, 'In Progress': 0, 'Completed': 0}
+    for task in tasks:
+        distribution[task.status] += 1
+    return jsonify(distribution)
+
+@api.route('/dashboard/user-productivity', methods=['GET'])
+@jwt_required()
+def get_user_productivity():
+    users = Users.query.filter_by(enterprise_id=get_jwt_identity()).all()
+    productivity_data = []
+    for user in users:
+        completed_tasks = Tasks.query.filter_by(user_id=user.id, status='Completed').count()
+        productivity_data.append({
+            'user_name': f"{user.first_name} {user.last_name}",
+            'completed_tasks': completed_tasks
+        })
+    return jsonify(productivity_data)
+
+@api.route('/dashboard/gantt-data', methods=['GET'])
+@jwt_required()
+def get_gantt_data():
+    projects = Projects.query.filter_by(enterprise_id=get_jwt_identity()).all()
+    gantt_data = []
+    for project in projects:
+        tasks = Tasks.query.filter_by(project_id=project.id).all()
+        for task in tasks:
+            gantt_data.append({
+                'task': task.name,
+                'start': task.created_at.isoformat(),
+                'end': task.due_date.isoformat(),
+                'project': project.name
+            })
+    return jsonify(gantt_data)
             
 
