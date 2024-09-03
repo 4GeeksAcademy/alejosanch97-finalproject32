@@ -200,11 +200,17 @@ export const Profile = () => {
             <div className="card shadow-lg">
                 <div className="card-body">
                     <div className="row">
-                        <div className="col-md-4 text-center">
-                            <img src="https://picsum.photos/200" className="rounded-circle img-thumbnail mb-3" alt="Imagen de perfil" />
+                        <div className="col-md-4 text-center d-flex flex-column align-items-center">
+                            <img src="https://picsum.photos/200" className="rounded-circle img-thumbnail mb-3 col-8" alt="Imagen de perfil" />
                             <h2 className="text-primary">{store.user.first_name} {store.user.last_name}</h2>
                             <p className="text-muted">{store.user.email}</p>
-                            <p className="badge bg-info">Rol: {store.user.role_id}</p>
+                            <p className="badge bg-info col-2">Rol: {store.user.role_id}</p>
+
+                            <button className="btn btn-primary py-0 mb-2" onClick={() => handleEditUser(store.user)}>
+                                Editar Perfil
+                            </button>
+
+
                             <p className="text-success">Organización: {store.user.organization_name || "No especificada"}</p>
                         </div>
                         <div className="col-md-8">
@@ -286,12 +292,18 @@ export const Profile = () => {
                                     <td>{user.username}</td>
                                     <td>{user.role_id}</td>
                                     <td>
-                                        <button className="btn btn-primary btn-sm" onClick={() => handleEditUser(user)}>
-                                            Editar
-                                        </button>
-                                        <button className="btn btn-danger btn-sm" onClick={() => handleDeleteUser(user.id)}>
-                                            Eliminar
-                                        </button>
+                                        {(store.user.role_id === 1 || store.user.role_id === "1") && (
+                                            <button className="btn btn-primary btn-sm" onClick={() => handleEditUser(user)}>
+                                                Editar
+                                            </button>
+                                        )}
+
+                                        {(store.user.role_id === 1 || store.user.role_id === "1") && (
+                                            <button className="btn btn-danger btn-sm" onClick={() => handleDeleteUser(user.id)}>
+                                                Eliminar
+                                            </button>
+                                        )}
+
                                     </td>
                                 </tr>
                             ))}
