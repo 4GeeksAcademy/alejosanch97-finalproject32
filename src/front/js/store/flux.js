@@ -24,7 +24,8 @@ const getState = ({ getStore, getActions, setStore }) => {
      		taskCompletionRate: [],
       		taskDistribution: {},
       		userProductivity: [],
-      		ganttData: []
+      		ganttData: [],
+			tasksWithProjects: []
 			
 		},
 		actions: {
@@ -335,6 +336,9 @@ const getState = ({ getStore, getActions, setStore }) => {
 					setStore({ 
 						projectTasks: { ...store.projectTasks, [projectId]: updatedTasks }
 					});
+
+					// Actualizar tasksWithProjects
+                    getActions().getAllTasksWithProjects();
 			
 					return newTask;
 				} catch (error) {
@@ -417,6 +421,7 @@ const getState = ({ getStore, getActions, setStore }) => {
 					}
 			
 					const updatedTask = await response.json();
+					
 					return updatedTask;
 				} catch (error) {
 					console.error('Error updating task:', error);

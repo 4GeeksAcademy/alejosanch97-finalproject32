@@ -8,6 +8,7 @@ export const ProjectManager = () => {
     const [newMemberEmail, setNewMemberEmail] = useState('');
     const [editingTask, setEditingTask] = useState(null);
     const [editingProject, setEditingProject] = useState(null);
+    const [calendarEvents, setCalendarEvents] = useState([]);
 
     useEffect(() => {
         actions.getProjects();
@@ -20,6 +21,19 @@ export const ProjectManager = () => {
             actions.getProjectMembers(selectedProject.id);
         }
     }, [selectedProject]);
+
+    useEffect(() => {
+        if (store.projectTasks[selectedProject?.id]) {
+            const events = store.projectTasks[selectedProject.id].map(task => ({
+                title: task.name,
+                start: new Date(task.due_date),
+                end: new Date(task.due_date),
+                allDay: true,
+                resource: task
+            }));
+            setCalendarEvents(events);
+        }
+    }, [store.projectTasks, selectedProject]);
 
     const handleAddTask = async () => {
         await actions.addProjectTask(selectedProject.id, newTask);

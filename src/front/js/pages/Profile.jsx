@@ -12,6 +12,10 @@ export const Profile = () => {
     const navigate = useNavigate();
     const [showCreateUser, setShowCreateUser] = useState(false);
     const [showCreateProject, setShowCreateProject] = useState(false);
+    const [calendarEvents, setCalendarEvents] = useState([]);
+    const [filteredTasks, setFilteredTasks] = useState([]);
+    const [taskFilter, setTaskFilter] = useState("all");
+
     const [newUser, setNewUser] = useState({
         first_name: "",
         last_name: "",
@@ -105,9 +109,44 @@ export const Profile = () => {
             await actions.getProjects();
             const tasks = await actions.getAllTasksWithProjects();
             setTasksWithProjects(tasks);
+            setFilteredTasks(tasks);
+            updateCalendarEvents(tasks);
         };
         fetchData();
     }, [store.token]);
+
+    useEffect(() => {
+        if (store.tasksWithProjects) {
+            filterTasks(taskFilter);
+        }
+    }, [store.tasksWithProjects, taskFilter]);
+
+    const filterTasks = (status) => {
+        let filtered = store.tasksWithProjects;
+        if (status !== "all") {
+            filtered = filtered.filter(task => task.task_status.toLowerCase() === status.toLowerCase());
+        }
+        filtered.sort((a, b) => new Date(a.task_due_date) - new Date(b.task_due_date));
+        setFilteredTasks(filtered);
+        updateCalendarEvents(filtered);
+    };
+
+    useEffect(() => {
+        if (store.tasksWithProjects) {
+            updateCalendarEvents(store.tasksWithProjects);
+        }
+    }, [store.tasksWithProjects]);
+
+    const updateCalendarEvents = (tasks) => {
+        const events = tasks.map(task => ({
+            title: `${task.task_name} (${task.project_name})`,
+            start: new Date(task.task_due_date),
+            end: new Date(task.task_due_date),
+            allDay: true,
+            resource: task
+        }));
+        setCalendarEvents(events);
+    };
 
     const handleCreateUser = async (e) => {
         e.preventDefault();
@@ -230,8 +269,20 @@ export const Profile = () => {
                             <div className="card bg-light">
                                 <div className="card-body">
                                     <h4 className="card-title text-primary">Tareas Asignadas</h4>
-                                    {tasksWithProjects && tasksWithProjects.length > 0 ? (
-                                        tasksWithProjects.map(task => (
+                                    <div className="mb-3">
+                                        <select
+                                            className="form-select"
+                                            value={taskFilter}
+                                            onChange={(e) => setTaskFilter(e.target.value)}
+                                        >
+                                            <option value="all">Todos</option>
+                                            <option value="Pending">Pendiente</option>
+                                            <option value="In Progress">En progreso</option>
+                                            <option value="Completed">Completado</option>
+                                        </select>
+                                    </div>
+                                    {filteredTasks && filteredTasks.length > 0 ? (
+                                        filteredTasks.map(task => (
                                             <div key={task.task_id} className="card mb-2">
                                                 <div className="card-body">
                                                     <h5 className="card-title">{task.task_name}</h5>
@@ -243,7 +294,7 @@ export const Profile = () => {
                                             </div>
                                         ))
                                     ) : (
-                                        <p>No hay tareas asignadas.</p>
+                                        <p>No hay tareas asignadas para este filtro.</p>
                                     )}
                                 </div>
                             </div>
@@ -302,7 +353,15 @@ export const Profile = () => {
             <div className="card mt-4">
                 <div className="card-body">
                     <h3 className="card-title">Calendario de Tareas</h3>
-
+                    <div style={{ height: '500px' }}>
+                        <Calendar
+                            localizer={localizer}
+                            events={calendarEvents}
+                            startAccessor="start"
+                            endAccessor="end"
+                            style={{ height: '100%' }}
+                        />
+                    </div>
                 </div>
             </div>
             {showCreateUser && (
