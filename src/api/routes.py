@@ -86,6 +86,7 @@ def add_user():
             role_id=user_data.get("role_id"),
             email=user_data.get("email"),
             username=user_data.get("username"),
+            avatar=user_data.get("avatar")
             password=hashed_password,
             first_name=user_data.get("first_name"),
             last_name=user_data.get("last_name"),
@@ -111,7 +112,7 @@ def update_user(user_id):
     current_user = Users.query.get(current_user_id)
     
     # Verificar si el usuario actual es un administrador
-    if current_user.role_id != 1:
+    if current_user.role_id not in [1, 2]:
         return jsonify({"message": "No tienes permisos para realizar esta acción"}), 403
     
     user_to_update = Users.query.get(user_id)
@@ -125,8 +126,12 @@ def update_user(user_id):
     user_to_update.last_name = data.get('last_name', user_to_update.last_name)
     user_to_update.username = data.get('username', user_to_update.username)
     user_to_update.email = data.get('email', user_to_update.email)
-    user_to_update.role_id = data.get('role_id', user_to_update.role_id)
     
+    # Si el usuario actual tiene rol 1 (admin), permitir editar todos los campos
+    if current_user.role_id == 1:
+        user_to_update.role_id = data.get('role_id', user_to_update.role_id)
+           
+        
     # Si se proporciona una nueva contraseña, actualizarla
     if 'password' in data and data['password']:
         salt = b64encode(os.urandom(32)).decode("utf-8")

@@ -206,7 +206,7 @@ export const Profile = () => {
                             <p className="text-muted">{store.user.email}</p>
                             <p className="badge bg-info col-2">Rol: {store.user.role_id}</p>
 
-                            <button className="btn btn-primary py-0 mb-2" onClick={() => handleEditUser(store.user)}>
+                            <button className="btn btn-primary py-0 mb-2 " onClick={() => handleEditUser(store.user)}>
                                 Editar Perfil
                             </button>
 
@@ -293,13 +293,13 @@ export const Profile = () => {
                                     <td>{user.role_id}</td>
                                     <td>
                                         {(store.user.role_id === 1 || store.user.role_id === "1") && (
-                                            <button className="btn btn-primary btn-sm" onClick={() => handleEditUser(user)}>
+                                            <button className="btn btn-primary btn-sm mx-2 px-3" onClick={() => handleEditUser(user)}>
                                                 Editar
                                             </button>
                                         )}
 
                                         {(store.user.role_id === 1 || store.user.role_id === "1") && (
-                                            <button className="btn btn-danger btn-sm" onClick={() => handleDeleteUser(user.id)}>
+                                            <button className="btn btn-danger btn-sm mx-2" onClick={() => handleDeleteUser(user.id)}>
                                                 Eliminar
                                             </button>
                                         )}

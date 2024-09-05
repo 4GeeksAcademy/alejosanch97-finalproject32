@@ -11,6 +11,7 @@ export const Register = () => {
             first_name: "",
             last_name: "",
             username: "",
+            avatar: "",
             email: "",
             password: "",
             role_id: "",
@@ -103,6 +104,22 @@ export const Register = () => {
                         required
                     />
                 </div>
+                <div className="mb-3 d-flex flex-column">
+                    <label htmlFor="avatar" className="form-label">Imagen de perfile</label>
+                    <input
+                        type="file"
+                        id="avatar"
+                        name="avatar"
+                        accept="image/png, image/jpeg"
+
+                        className="form-control"
+                        onChange={(event) => {
+                            setFormData({ ...formData, user, avatar: event.target.files[0] })
+                        }}
+                        required
+                    />
+                </div>
+
                 <div className="mb-3">
                     <label htmlFor="email" className="form-label">Email</label>
                     <input

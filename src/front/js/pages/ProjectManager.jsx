@@ -96,16 +96,18 @@ export const ProjectManager = () => {
                     <h2>Projects</h2>
                     <ul className="list-group">
                         {store.projects.map(project => (
-                            <li
-                                key={project.id}
-                                className={`list-group-item ${selectedProject && selectedProject.id === project.id ? 'active' : ''}`}
-                            >
-                                <span onClick={() => setSelectedProject(project)}>{project.name}</span>
-                                <div className="float-right">
-                                    <button className="btn btn-sm btn-warning mr-2" onClick={() => handleEditProject(project)}>Edit</button>
-                                    <button className="btn btn-sm btn-danger" onClick={() => handleDeleteProject(project.id)}>Delete</button>
-                                </div>
-                            </li>
+                            <button onClick={() => setSelectedProject(project)} className='btn btn-outline-secondary'>{project.name}
+                                <li
+                                    key={project.id}
+                                    className={`list-group-item ${selectedProject && selectedProject.id === project.id ? 'active' : ''}`}
+                                >
+
+                                    <div className="float-right">
+                                        <button className="btn btn-sm btn-warning mx-2 px-3" onClick={() => handleEditProject(project)}>Edit</button>
+                                        <button className="btn btn-sm btn-danger mx-2" onClick={() => handleDeleteProject(project.id)}>Delete</button>
+                                    </div>
+                                </li>
+                            </button>
                         ))}
                     </ul>
                 </div>
@@ -118,12 +120,12 @@ export const ProjectManager = () => {
                                 <h3>Tasks</h3>
                                 {store.projectTasks[selectedProject.id] && (
                                     <div className="progress mb-3">
-                                        <div 
-                                            className="progress-bar" 
-                                            role="progressbar" 
-                                            style={{width: `${calculateProgress(store.projectTasks[selectedProject.id])}%`}}
+                                        <div
+                                            className="progress-bar"
+                                            role="progressbar"
+                                            style={{ width: `${calculateProgress(store.projectTasks[selectedProject.id])}%` }}
                                             aria-valuenow={calculateProgress(store.projectTasks[selectedProject.id])}
-                                            aria-valuemin="0" 
+                                            aria-valuemin="0"
                                             aria-valuemax="100"
                                         >
                                             {calculateProgress(store.projectTasks[selectedProject.id])}%
@@ -153,8 +155,8 @@ export const ProjectManager = () => {
                                                         value={editingTask.due_date}
                                                         onChange={(e) => setEditingTask({ ...editingTask, due_date: e.target.value })}
                                                     />
-                                                    <button className="btn btn-success mr-2" onClick={handleUpdateTask}>Save</button>
-                                                    <button className="btn btn-secondary" onClick={() => setEditingTask(null)}>Cancel</button>
+                                                    <button className="btn btn-success mr-2 px-4 mx-2" onClick={handleUpdateTask}>Save</button>
+                                                    <button className="btn btn-secondary mx-2" onClick={() => setEditingTask(null)}>Cancel</button>
                                                 </>
                                             ) : (
                                                 <>
@@ -162,7 +164,7 @@ export const ProjectManager = () => {
                                                     <div className="float-right">
                                                         <select
                                                             className="form-control form-control-sm d-inline-block mr-2"
-                                                            style={{width: 'auto'}}
+                                                            style={{ width: 'auto' }}
                                                             value={task.status}
                                                             onChange={(e) => handleChangeTaskStatus(task.id, e.target.value)}
                                                         >
@@ -170,8 +172,8 @@ export const ProjectManager = () => {
                                                             <option value="In Progress">In Progress</option>
                                                             <option value="Completed">Completed</option>
                                                         </select>
-                                                        <button className="btn btn-sm btn-warning mr-2" onClick={() => handleEditTask(task)}>Edit</button>
-                                                        <button className="btn btn-sm btn-danger" onClick={() => handleDeleteTask(task.id)}>Delete</button>
+                                                        <button className="btn btn-sm btn-warning mr-2 px-3 mx-2" onClick={() => handleEditTask(task)}>Edit</button>
+                                                        <button className="btn btn-sm btn-danger mx-2" onClick={() => handleDeleteTask(task.id)}>Delete</button>
                                                     </div>
                                                 </>
                                             )}
@@ -225,7 +227,7 @@ export const ProjectManager = () => {
                 )}
             </div>
             {editingProject && (
-                <div className="modal" style={{display: 'block', backgroundColor: 'rgba(0,0,0,0.5)'}}>
+                <div className="modal" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
                     <div className="modal-dialog">
                         <div className="modal-content">
                             <div className="modal-header">
