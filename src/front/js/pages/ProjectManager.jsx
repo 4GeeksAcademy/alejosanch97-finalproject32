@@ -92,10 +92,15 @@ export const ProjectManager = () => {
 
     const handleUpdateTask = async () => {
         try {
-            await actions.updateTask(editingTask.id, editingTask);
-            setEditingTask(null);
-            actions.getProjectTasks(selectedProject.id);
-            setError('');
+            const updatedTask = await actions.updateTask(editingTask.id, editingTask);
+            if (updatedTask) {
+                const updatedTasks = store.projectTasks[selectedProject.id].map(task =>
+                    task.id === editingTask.id ? { ...task, ...updatedTask } : task
+                );
+                actions.setProjectTasks(selectedProject.id, updatedTasks);
+                setEditingTask(null);
+                setError('');
+            }
         } catch (error) {
             setError(error.message);
         }
@@ -275,15 +280,7 @@ export const ProjectManager = () => {
                                                         min={getCurrentDate()}
                                                         onChange={(e) => setEditingTask({ ...editingTask, due_date: e.target.value })}
                                                     />
-                                                    <select
-                                                        className="form-control mb-2"
-                                                        value={editingTask.priority}
-                                                        onChange={(e) => setEditingTask({ ...editingTask, priority: e.target.value })}
-                                                    >
-                                                        <option value="low">Low</option>
-                                                        <option value="medium">Medium</option>
-                                                        <option value="high">High</option>
-                                                    </select>
+                                                
                                                     <button className="btn btn-success mr-2" onClick={handleUpdateTask}>Save</button>
                                                     <button className="btn btn-secondary" onClick={() => setEditingTask(null)}>Cancel</button>
                                                 </>
