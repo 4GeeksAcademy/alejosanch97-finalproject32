@@ -2,7 +2,7 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 from flask import Flask, request, jsonify, url_for, Blueprint
-from api.models import db, Users, Projects, Tasks, Enterprises, Roles, Sub_tasks, ProjectMembers
+from api.models import db, Users, Projects, Tasks, Enterprises, Roles, Sub_tasks, ProjectMembers, TaskComments, ProjectComments
 from api.utils import generate_sitemap, APIException, set_password
 from flask_cors import CORS
 from datetime import datetime, timezone, timedelta
@@ -272,7 +272,8 @@ def add_project():
         start_date=datetime.fromisoformat(data['start_date']),
         end_date=datetime.fromisoformat(data['end_date']),
         enterprise_id=enterprise_id,
-        user_id=current_user_id
+        user_id=current_user_id,
+        priority=data.get('priority', 'medium')
     )
 
     db.session.add(new_project)
@@ -309,6 +310,7 @@ def update_or_delete_project(project_id):
         project.description = data.get('description', project.description)
         project.start_date = datetime.fromisoformat(data['start_date']) if 'start_date' in data else project.start_date
         project.end_date = datetime.fromisoformat(data['end_date']) if 'end_date' in data else project.end_date
+        project.priority = data.get('priority', project.priority)
 
         db.session.commit()
         return jsonify(project.serialize()), 200
@@ -391,7 +393,8 @@ def project_tasks(project_id):
             name=data['name'],
             description=data['description'],
             status=data['status'],
-            due_date=datetime.fromisoformat(data['due_date'])
+            due_date=datetime.fromisoformat(data['due_date']),
+            priority=data.get('priority', 'medium')
         )
         db.session.add(new_task)
         db.session.commit()
@@ -532,6 +535,7 @@ def update_or_delete_task(task_id):
         task.description = data.get('description', task.description)
         task.status = data.get('status', task.status)
         task.due_date = datetime.fromisoformat(data['due_date']) if 'due_date' in data else task.due_date
+        priority=data.get('priority', 'medium')
 
         if old_status != task.status:
             task.last_status_change_by = current_user_id
@@ -544,6 +548,94 @@ def update_or_delete_task(task_id):
         db.session.delete(task)
         db.session.commit()
         return jsonify({"message": "Task deleted successfully"}), 200
+    
+
+# comments
+# Nuevas rutas para comentarios de proyectos
+@api.route('/project/<int:project_id>/comments', methods=['POST'])
+@jwt_required()
+def add_project_comment(project_id):
+    current_user_id = get_jwt_identity()
+    project = Projects.query.get(project_id)
+    
+    if not project:
+        return jsonify({"message": "Proyecto no encontrado"}), 404
+    
+    is_member = ProjectMembers.query.filter_by(project_id=project_id, user_id=current_user_id).first() is not None
+    
+    if not is_member:
+        return jsonify({"message": "No tienes acceso a este proyecto"}), 403
+
+    data = request.json
+    new_comment = ProjectComments(
+        project_id=project_id,
+        user_id=current_user_id,
+        content=data['content']
+    )
+    db.session.add(new_comment)
+    db.session.commit()
+    return jsonify(new_comment.serialize()), 201
+
+@api.route('/project/<int:project_id>/comments', methods=['GET'])
+@jwt_required()
+def get_project_comments(project_id):
+    current_user_id = get_jwt_identity()
+    project = Projects.query.get(project_id)
+    
+    if not project:
+        return jsonify({"message": "Proyecto no encontrado"}), 404
+    
+    is_member = ProjectMembers.query.filter_by(project_id=project_id, user_id=current_user_id).first() is not None
+    
+    if not is_member:
+        return jsonify({"message": "No tienes acceso a este proyecto"}), 403
+
+    comments = ProjectComments.query.filter_by(project_id=project_id).order_by(ProjectComments.created_at.desc()).all()
+    return jsonify([comment.serialize() for comment in comments]), 200
+
+# Nuevas rutas para comentarios de tareas
+@api.route('/task/<int:task_id>/comments', methods=['POST'])
+@jwt_required()
+def add_task_comment(task_id):
+    current_user_id = get_jwt_identity()
+    task = Tasks.query.get(task_id)
+    
+    if not task:
+        return jsonify({"message": "Tarea no encontrada"}), 404
+    
+    project = Projects.query.get(task.project_id)
+    is_member = ProjectMembers.query.filter_by(project_id=project.id, user_id=current_user_id).first() is not None
+    
+    if not is_member:
+        return jsonify({"message": "No tienes acceso a esta tarea"}), 403
+
+    data = request.json
+    new_comment = TaskComments(
+        task_id=task_id,
+        user_id=current_user_id,
+        content=data['content']
+    )
+    db.session.add(new_comment)
+    db.session.commit()
+    return jsonify(new_comment.serialize()), 201
+
+@api.route('/task/<int:task_id>/comments', methods=['GET'])
+@jwt_required()
+def get_task_comments(task_id):
+    current_user_id = get_jwt_identity()
+    task = Tasks.query.get(task_id)
+    
+    if not task:
+        return jsonify({"message": "Tarea no encontrada"}), 404
+    
+    project = Projects.query.get(task.project_id)
+    is_member = ProjectMembers.query.filter_by(project_id=project.id, user_id=current_user_id).first() is not None
+    
+    if not is_member:
+        return jsonify({"message": "No tienes acceso a esta tarea"}), 403
+
+    comments = TaskComments.query.filter_by(task_id=task_id).order_by(TaskComments.created_at.desc()).all()
+    return jsonify([comment.serialize() for comment in comments]), 200
     
 #dashboard 
 

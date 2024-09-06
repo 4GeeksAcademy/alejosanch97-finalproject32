@@ -32,12 +32,15 @@ export const Profile = () => {
         description: "",
         start_date: "",
         end_date: "",
+        priority: "medium",
         user_id: store.user ? store.user.id : null,
         enterprise_id: store.user ? store.user.enterprise_id : null
     });
 
     const [editingUser, setEditingUser] = useState(null);
     const [tasksWithProjects, setTasksWithProjects] = useState([]);
+
+    
 
     const handleInputChange = (e) => {
         setNewUser({
@@ -195,14 +198,26 @@ export const Profile = () => {
 
     const handleCreateProject = async (e) => {
         e.preventDefault();
-        if (!newProject.name || !newProject.description || !newProject.start_date || !newProject.end_date) {
+        if (!newProject.name || !newProject.description || !newProject.start_date || !newProject.end_date || !newProject.priority) {
             alert("Todos los campos son requeridos");
             return;
         }
-        if (newProject.description.length > 5000) {  // Ajusta este número según tus necesidades
+        if (newProject.description.length > 5000) {
             alert("La descripción es demasiado larga. Por favor, acórtala.");
             return;
         }
+
+        const today = new Date().toISOString().split('T')[0];
+        if (newProject.start_date < today || newProject.end_date < today) {
+            alert("Las fechas de inicio y finalización no pueden ser anteriores a hoy.");
+            return;
+        }
+
+        if (newProject.end_date < newProject.start_date) {
+            alert("La fecha de finalización no puede ser anterior a la fecha de inicio.");
+            return;
+        }
+
         try {
             const projectToCreate = {
                 ...newProject,
@@ -218,6 +233,7 @@ export const Profile = () => {
                     description: "",
                     start_date: "",
                     end_date: "",
+                    priority: "medium",
                     user_id: store.user.id,
                     enterprise_id: store.user.enterprise_id
                 });
@@ -467,12 +483,28 @@ export const Profile = () => {
                             />
                         </div>
                         <div className="mb-3">
-                            <label htmlFor="description" className="form-label">Fecha de Inicio</label>
+                            <label htmlFor="priority" className="form-label">Prioridad</label>
+                            <select
+                                name="priority"
+                                id="priority"
+                                value={newProject.priority}
+                                className="form-control"
+                                onChange={handleProjectInputChange}
+                                required
+                            >
+                                <option value="low">Baja</option>
+                                <option value="medium">Media</option>
+                                <option value="high">Alta</option>
+                            </select>
+                        </div>
+                        <div className="mb-3">
+                            <label htmlFor="start_date" className="form-label">Fecha de Inicio</label>
                             <input
                                 type="date"
                                 name="start_date"
                                 id="start_date"
                                 value={newProject.start_date}
+                                min={new Date().toISOString().split('T')[0]}
                                 className="form-control"
                                 onChange={handleProjectInputChange}
                                 required
@@ -485,6 +517,7 @@ export const Profile = () => {
                                 name="end_date"
                                 id="end_date"
                                 value={newProject.end_date}
+                                min={newProject.start_date || new Date().toISOString().split('T')[0]}
                                 className="form-control"
                                 onChange={handleProjectInputChange}
                                 required
