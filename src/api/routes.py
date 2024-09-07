@@ -67,13 +67,7 @@ def add_user():
         "address": data_form.get("address"),
     }
 
-   # body = request.json
-   # user_data = body.get("user", {})
-   # enterprise_data = body.get("enterprise", {})
-
-    # Validación de campos requeridos
-    #if not ([user_data.get("email"), user_data.get("password"), user_data.get("last_name")]):
-     #   return jsonify({"message": "Se requieren email, contraseña y apellido"}), 400
+   
     
     if user_data.get("email", None) is None or user_data.get("password", None) is None or user_data.get("last_name", None) is None:
         return jsonify({"message": "Se requieren email, contraseña y apellido"}), 400
