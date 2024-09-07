@@ -6,6 +6,7 @@ from api.models import db, Users, Projects, Tasks, Enterprises, Roles, Sub_tasks
 from api.utils import generate_sitemap, APIException, set_password
 from flask_cors import CORS
 from datetime import datetime, timezone, timedelta
+from sqlalchemy import func
 
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import check_password_hash
@@ -535,11 +536,16 @@ def update_or_delete_task(task_id):
         task.description = data.get('description', task.description)
         task.status = data.get('status', task.status)
         task.due_date = datetime.fromisoformat(data['due_date']) if 'due_date' in data else task.due_date
-        priority=data.get('priority', 'medium')
+        task.priority = data.get('priority', task.priority)
 
         if old_status != task.status:
             task.last_status_change_by = current_user_id
             task.last_status_change_at = datetime.utcnow()
+
+            # Verificar si todas las tareas del proyecto están completadas
+            all_tasks_completed = all(t.status == 'Completed' for t in project.tasks)
+            if all_tasks_completed and project.completed_at is None:
+             project.completed_at = datetime.utcnow()
 
         db.session.commit()
         return jsonify(task.serialize()), 200
@@ -549,7 +555,6 @@ def update_or_delete_task(task_id):
         db.session.commit()
         return jsonify({"message": "Task deleted successfully"}), 200
     
-
 # comments
 # Nuevas rutas para comentarios de proyectos
 @api.route('/project/<int:project_id>/comments', methods=['POST'])
@@ -655,61 +660,67 @@ def get_project_progress():
         })
     return jsonify(progress_data)
 
-@api.route('/dashboard/task-completion-rate', methods=['GET'])
+@api.route('/dashboard/tasks-by-status', methods=['GET'])
 @jwt_required()
-def get_task_completion_rate():
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=30)
-    tasks = Tasks.query.filter(Tasks.created_at.between(start_date, end_date)).all()
-    completion_data = {}
-    for task in tasks:
-        week = task.created_at.isocalendar()[1]
-        if week not in completion_data:
-            completion_data[week] = {'total': 0, 'completed': 0}
-        completion_data[week]['total'] += 1
-        if task.status == 'Completed':
-            completion_data[week]['completed'] += 1
+def get_tasks_by_status():
+    current_user_id = get_jwt_identity()
+    user = Users.query.get(current_user_id)
     
-    result = [{'week': week, 'rate': data['completed'] / data['total'] if data['total'] > 0 else 0} 
-              for week, data in completion_data.items()]
+    tasks_by_status = db.session.query(
+        Tasks.status, 
+        func.count(Tasks.id)
+    ).join(Projects).filter(
+        Projects.enterprise_id == user.enterprise_id
+    ).group_by(Tasks.status).all()
+    
+    result = [{"status": status, "count": count} for status, count in tasks_by_status]
     return jsonify(result)
 
-@api.route('/dashboard/task-distribution', methods=['GET'])
+@api.route('/dashboard/status-changes-by-user', methods=['GET'])
 @jwt_required()
-def get_task_distribution():
-    tasks = Tasks.query.filter_by(enterprise_id=get_jwt_identity()).all()
-    distribution = {'Pending': 0, 'In Progress': 0, 'Completed': 0}
-    for task in tasks:
-        distribution[task.status] += 1
-    return jsonify(distribution)
+def get_status_changes_by_user():
+    current_user_id = get_jwt_identity()
+    user = Users.query.get(current_user_id)
+    
+    status_changes = db.session.query(
+        Users.id,
+        Users.first_name,
+        Users.last_name,
+        func.count(Tasks.id)
+    ).join(Tasks, Users.id == Tasks.last_status_change_by
+    ).join(Projects, Tasks.project_id == Projects.id
+    ).filter(Projects.enterprise_id == user.enterprise_id
+    ).group_by(Users.id).all()
+    
+    result = [{
+        "user_id": user_id,
+        "name": f"{first_name} {last_name}",
+        "changes_count": count
+    } for user_id, first_name, last_name, count in status_changes]
+    
+    return jsonify(result)
 
-@api.route('/dashboard/user-productivity', methods=['GET'])
+@api.route('/dashboard/project-completion-time', methods=['GET'])
 @jwt_required()
-def get_user_productivity():
-    users = Users.query.filter_by(enterprise_id=get_jwt_identity()).all()
-    productivity_data = []
-    for user in users:
-        completed_tasks = Tasks.query.filter_by(user_id=user.id, status='Completed').count()
-        productivity_data.append({
-            'user_name': f"{user.first_name} {user.last_name}",
-            'completed_tasks': completed_tasks
+def get_project_completion_time():
+    current_user_id = get_jwt_identity()
+    user = Users.query.get(current_user_id)
+    
+    completed_projects = Projects.query.filter(
+        Projects.enterprise_id == user.enterprise_id,
+        Projects.completed_at.isnot(None)
+    ).all()
+    
+    result = []
+    for project in completed_projects:
+        completion_time = project.completed_at - project.start_date
+        days, seconds = completion_time.days, completion_time.seconds
+        hours = seconds // 3600
+        
+        result.append({
+            "project_id": project.id,
+            "project_name": project.name,
+            "completion_time": f"{days} días y {hours} horas"
         })
-    return jsonify(productivity_data)
-
-@api.route('/dashboard/gantt-data', methods=['GET'])
-@jwt_required()
-def get_gantt_data():
-    projects = Projects.query.filter_by(enterprise_id=get_jwt_identity()).all()
-    gantt_data = []
-    for project in projects:
-        tasks = Tasks.query.filter_by(project_id=project.id).all()
-        for task in tasks:
-            gantt_data.append({
-                'task': task.name,
-                'start': task.created_at.isoformat(),
-                'end': task.due_date.isoformat(),
-                'project': project.name
-            })
-    return jsonify(gantt_data)
-            
-
+    
+    return jsonify(result)

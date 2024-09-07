@@ -22,12 +22,16 @@ const getState = ({ getStore, getActions, setStore }) => {
 			projectMembers: {},
 			projectProgress: [],
      		taskCompletionRate: [],
-      		taskDistribution: {},
-      		userProductivity: [],
-      		ganttData: [],
+			taskStatusDistribution: [],
+			taskDistribution: {},
+			userProductivity: [],
+			averageTaskDuration: [],
 			tasksWithProjects: [],
 			projectComments: {},
-			taskComments: {}
+			taskComments: {},
+			userTaskStatusDistribution: {},
+			projectCompletionTime: [],
+
 			
 		},
 		actions: {
@@ -127,7 +131,7 @@ const getState = ({ getStore, getActions, setStore }) => {
                             user: data
                         });
                         localStorage.setItem("user", JSON.stringify(data));
-                        await getActions().getUserTasks();
+                        
                     } else {
                         throw new Error("Failed to fetch user data");
                     }
@@ -435,6 +439,7 @@ const getState = ({ getStore, getActions, setStore }) => {
 
 			updateTask: async (taskId, taskData) => {
 				const store = getStore();
+				const actions = getActions();
 				try {
 					// Validar la fecha antes de enviar al backend
 					const today = new Date().toISOString().split('T')[0];
@@ -456,7 +461,24 @@ const getState = ({ getStore, getActions, setStore }) => {
 					}
 			
 					const updatedTask = await response.json();
-					
+			
+					// Actualizar la tarea en el estado
+					setStore(store => {
+						const updatedProjectTasks = { ...store.projectTasks };
+						const projectId = updatedTask.project_id;
+						if (updatedProjectTasks[projectId]) {
+							updatedProjectTasks[projectId] = updatedProjectTasks[projectId].map(task => 
+								task.id === updatedTask.id ? updatedTask : task
+							);
+						}
+						return { projectTasks: updatedProjectTasks };
+					});
+			
+					// Actualizar los datos del dashboard
+					await actions.getTasksByStatus();
+					await actions.getStatusChangesByUser();
+					await actions.getProjectCompletionTime();
+			
 					return updatedTask;
 				} catch (error) {
 					console.error('Error updating task:', error);
@@ -670,6 +692,93 @@ const getState = ({ getStore, getActions, setStore }) => {
             },
 
 			// dashboard
+
+			getTasksByStatus: async () => {
+				const store = getStore();
+				try {
+				  const response = await fetch(`${process.env.BACKEND_URL}/api/dashboard/tasks-by-status`, {
+					method: 'GET',
+					headers: {
+					  'Authorization': `Bearer ${store.token}`
+					}
+				  });
+			  
+				  if (!response.ok) {
+					throw new Error('Failed to fetch tasks by status');
+				  }
+			  
+				  const taskStatusData = await response.json();
+			  
+				  // Mapear los estados a nombres legibles
+				  const STATUS_NAMES = {
+					0: 'Completed',
+					1: 'In Progress',
+					2: 'Pending'
+				  };
+			  
+				  const taskStatusDistribution = taskStatusData.map(item => ({
+					...item,
+					name: STATUS_NAMES[item.status] || `Status ${item.status}`,
+					value: item.count // Asegúrate de que 'value' esté definido para Recharts
+				  }));
+			  
+				  setStore({ taskStatusDistribution: taskStatusDistribution });
+			  
+				  return taskStatusDistribution;
+				} catch (error) {
+				  console.error('Error fetching tasks by status:', error);
+				  return [];
+				}
+			  },
+			
+			getStatusChangesByUser: async () => {
+				const store = getStore();
+				try {
+					const response = await fetch(`${process.env.BACKEND_URL}/api/dashboard/status-changes-by-user`, {
+						method: 'GET',
+						headers: {
+							'Authorization': `Bearer ${store.token}`
+						}
+					});
+			
+					if (!response.ok) {
+						throw new Error('Failed to fetch status changes by user');
+					}
+			
+					const userProductivity = await response.json();
+					setStore({ userProductivity: userProductivity });
+			
+					return userProductivity;
+				} catch (error) {
+					console.error('Error fetching status changes by user:', error);
+					return [];
+				}
+			},
+			
+			getProjectCompletionTime: async () => {
+				const store = getStore();
+				try {
+					const response = await fetch(`${process.env.BACKEND_URL}/api/dashboard/project-completion-time`, {
+						method: 'GET',
+						headers: {
+							'Authorization': `Bearer ${store.token}`
+						}
+					});
+			
+					if (!response.ok) {
+						throw new Error('Failed to fetch project completion time');
+					}
+			
+					const projectCompletionTime = await response.json();
+					setStore({ projectCompletionTime: projectCompletionTime });
+			
+					return projectCompletionTime;
+				} catch (error) {
+					console.error('Error fetching project completion time:', error);
+					return [];
+				}
+			},
+
 			getProjectProgress: async () => {
 				const store = getStore();
 				try {
@@ -682,58 +791,6 @@ const getState = ({ getStore, getActions, setStore }) => {
 				  console.error("Error fetching project progress", error);
 				}
 			  },
-		
-			  getTaskCompletionRate: async () => {
-				const store = getStore();
-				try {
-				  const resp = await fetch(`${process.env.BACKEND_URL}/api/dashboard/task-completion-rate`, {
-					headers: { "Authorization": `Bearer ${store.token}` }
-				  });
-				  const data = await resp.json();
-				  setStore({ taskCompletionRate: data });
-				} catch (error) {
-				  console.error("Error fetching task completion rate", error);
-				}
-			  },
-		
-			  getTaskDistribution: async () => {
-				const store = getStore();
-				try {
-				  const resp = await fetch(`${process.env.BACKEND_URL}/api/dashboard/task-distribution`, {
-					headers: { "Authorization": `Bearer ${store.token}` }
-				  });
-				  const data = await resp.json();
-				  setStore({ taskDistribution: data });
-				} catch (error) {
-				  console.error("Error fetching task distribution", error);
-				}
-			  },
-		
-			  getUserProductivity: async () => {
-				const store = getStore();
-				try {
-				  const resp = await fetch(`${process.env.BACKEND_URL}/api/dashboard/user-productivity`, {
-					headers: { "Authorization": `Bearer ${store.token}` }
-				  });
-				  const data = await resp.json();
-				  setStore({ userProductivity: data });
-				} catch (error) {
-				  console.error("Error fetching user productivity", error);
-				}
-			  },
-
-			  getGanttData: async () => {
-				const store = getStore();
-				try {
-				  const resp = await fetch(`${process.env.BACKEND_URL}/api/dashboard/gantt-data`, {
-					headers: { "Authorization": `Bearer ${store.token}` }
-				  });
-				  const data = await resp.json();
-				  setStore({ ganttData: data });
-				} catch (error) {
-				  console.error("Error fetching Gantt data", error);
-				}
-			  }
 		}
 	};
 };

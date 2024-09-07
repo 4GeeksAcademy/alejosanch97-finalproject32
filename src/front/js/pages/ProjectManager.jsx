@@ -81,6 +81,8 @@ export const ProjectManager = () => {
             await actions.addProjectTask(selectedProject.id, newTask);
             setNewTask({ name: '', description: '', status: 'Pending', due_date: '', priority: 'medium' });
             setError('');
+            // Update the task status distribution
+            actions.getUserTaskStatusDistribution();
         } catch (error) {
             setError(error.message);
         }
@@ -98,6 +100,8 @@ export const ProjectManager = () => {
                     task.id === editingTask.id ? { ...task, ...updatedTask } : task
                 );
                 actions.setProjectTasks(selectedProject.id, updatedTasks);
+                // Update the task status distribution
+                actions.getUserTaskStatusDistribution();
                 setEditingTask(null);
                 setError('');
             }
@@ -116,8 +120,7 @@ export const ProjectManager = () => {
     const handleChangeTaskStatus = async (taskId, newStatus) => {
         await actions.updateTask(taskId, { status: newStatus });
         actions.getProjectTasks(selectedProject.id);
-        // Actualizar la productividad del usuario después de cambiar el estado de la tarea
-        actions.getUserProductivity();
+        
     };
 
     const handleChangeTaskPriority = async (taskId, newPriority) => {
@@ -226,7 +229,9 @@ export const ProjectManager = () => {
                                 <h4>Project Comments</h4>
                                 <ul className="list-group mb-3">
                                     {store.projectComments[selectedProject.id]?.map(comment => (
-                                        <li key={comment.id} className="list-group-item">{comment.content}</li>
+                                        <li key={comment.id} className="list-group-item">
+                                            <strong>{comment.user_name}</strong>: {comment.content}
+                                        </li>
                                     ))}
                                 </ul>
                                 <input
@@ -280,7 +285,7 @@ export const ProjectManager = () => {
                                                         min={getCurrentDate()}
                                                         onChange={(e) => setEditingTask({ ...editingTask, due_date: e.target.value })}
                                                     />
-                                                
+
                                                     <button className="btn btn-success mr-2" onClick={handleUpdateTask}>Save</button>
                                                     <button className="btn btn-secondary" onClick={() => setEditingTask(null)}>Cancel</button>
                                                 </>
@@ -319,7 +324,9 @@ export const ProjectManager = () => {
                                                             <h6>Task Comments</h6>
                                                             <ul className="list-group mb-2">
                                                                 {store.taskComments[task.id]?.map(comment => (
-                                                                    <li key={comment.id} className="list-group-item">{comment.content}</li>
+                                                                    <li key={comment.id} className="list-group-item">
+                                                                        <strong>{comment.user_name}</strong>: {comment.content}
+                                                                    </li>
                                                                 ))}
                                                             </ul>
                                                             <input
