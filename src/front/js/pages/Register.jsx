@@ -114,7 +114,7 @@ export const Register = () => {
 
                         className="form-control"
                         onChange={(event) => {
-                            setFormData({ ...formData, user, avatar: event.target.files[0] })
+                            setFormData({ ...user, avatar: event.target.files[0] })
                         }}
                         required
                     />
