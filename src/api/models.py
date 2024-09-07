@@ -10,6 +10,8 @@ class Users(db.Model):
     first_name = db.Column(db.String(120), unique=False, nullable=False)
     last_name = db.Column(db.String(120), unique=False, nullable=False)
     username = db.Column(db.String(120), unique=True, nullable=False)
+    avatar = db.Column(db.String(180), unique=False, nullable=True)
+    avatar_public_id = db.Column(db.String(180), nullable=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(180), unique=False, nullable=False)
     role_id = db.Column(db.Integer, db.ForeignKey("roles.id"), nullable=True)
@@ -30,6 +32,7 @@ class Users(db.Model):
         return {
             "id": self.id,
             "email": self.email,
+            "avatar": self.avatar,
             "first_name": self.first_name,
             "last_name": self.last_name,
             "role_id": self.role_id,
@@ -110,7 +113,8 @@ class Tasks(db.Model):
             "description": self.description,
             "status": self.status,
             "due_date": self.due_date.isoformat(),
-            "creation_date": self.creation_date.isoformat()
+            "creation_date": self.creation_date.isoformat(),
+            
         }
 
 class Sub_tasks(db.Model):

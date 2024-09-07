@@ -18,9 +18,14 @@ const getState = ({ getStore, getActions, setStore }) => {
             user: localStorage.getItem("user")|| null,
 			organizationUsers: [],
 			projects: [],
-			tasks: [],
-			taskDeimian:[],
+			projectTasks: {},
 			projectMembers: {},
+			projectProgress: [],
+     		taskCompletionRate: [],
+      		taskDistribution: {},
+      		userProductivity: [],
+      		ganttData: []
+			
 		},
 		actions: {
 			// Use getActions to call a function within a fuction
@@ -53,6 +58,29 @@ const getState = ({ getStore, getActions, setStore }) => {
 
 				//reset the global store
 				setStore({ demo: demo });
+			},
+
+			getAllTasksWithProjects: async () => {
+				const store = getStore();
+				try {
+					const response = await fetch(`${process.env.BACKEND_URL}/api/all-tasks-with-projects`, {
+						method: 'GET',
+						headers: {
+							'Authorization': `Bearer ${store.token}`
+						}
+					});
+			
+					if (!response.ok) {
+						throw new Error('Failed to fetch tasks with projects');
+					}
+			
+					const tasksWithProjects = await response.json();
+					setStore({ tasksWithProjects: tasksWithProjects });
+					return tasksWithProjects;
+				} catch (error) {
+					console.error('Error fetching tasks with projects:', error);
+					return [];
+				}
 			},
 
             login: async (user) => {
@@ -105,6 +133,58 @@ const getState = ({ getStore, getActions, setStore }) => {
                 }
             },
 
+			updateUser: async (userData) => {
+                const store = getStore();
+                try {
+                    const response = await fetch(`${process.env.BACKEND_URL}/api/user/${userData.id}`, {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${store.token}`
+                        },
+                        body: JSON.stringify(userData)
+                    });
+                    const data = await response.json();
+                    if (response.status === 200) {
+                        // Actualizar el usuario en el store
+                        const updatedUsers = store.organizationUsers.map(user => 
+                            user.id === userData.id ? {...user, ...userData} : user
+                        );
+                        setStore({ organizationUsers: updatedUsers });
+                        return { success: true, message: "Usuario actualizado con éxito" };
+                    } else {
+                        return { success: false, message: data.message || "Error al actualizar usuario" };
+                    }
+                } catch (error) {
+                    console.error("Error al actualizar usuario:", error);
+                    return { success: false, message: "Error en la conexión" };
+                }
+            },
+
+			deleteUser: async (userId) => {
+                const store = getStore();
+                try {
+                    const response = await fetch(`${process.env.BACKEND_URL}/api/user/${userId}`, {
+                        method: "DELETE",
+                        headers: {
+                            "Authorization": `Bearer ${store.token}`
+                        }
+                    });
+                    const data = await response.json();
+                    if (response.status === 200) {
+                        // Eliminar el usuario del store
+                        const updatedUsers = store.organizationUsers.filter(user => user.id !== userId);
+                        setStore({ organizationUsers: updatedUsers });
+                        return { success: true, message: "Usuario eliminado con éxito" };
+                    } else {
+                        return { success: false, message: data.message || "Error al eliminar usuario" };
+                    }
+                } catch (error) {
+                    console.error("Error al eliminar usuario:", error);
+                    return { success: false, message: "Error en la conexión" };
+                }
+            },
+
 			createProject: async (projectData) => {
 				const store = getStore();
 				try {
@@ -131,202 +211,59 @@ const getState = ({ getStore, getActions, setStore }) => {
 				}
 			},
 
-			createTask: async (projectId, taskData) => {
+			updateProject: async (projectId, projectData) => {
 				const store = getStore();
 				try {
-					const response = await fetch(`${process.env.BACKEND_URL}/api/projects/${projectId}/tasks`, {
-						method: "POST",
+					const response = await fetch(`${process.env.BACKEND_URL}/api/project/${projectId}`, {
+						method: 'PUT',
 						headers: {
-							"Content-Type": "application/json",
-							"Authorization": `Bearer ${store.token}`
-						},
-						body: JSON.stringify(taskData)
-					});
-					const data = await response.json();
-					if (response.status === 201) {
-						setStore({
-							tasks: [...store.tasks, data]
-						});
-						return { success: true, message: "Tarea creada con éxito", task: data };
-					} else {
-						return { success: false, message: data.message || "Error al crear la tarea" };
-					}
-				} catch (error) {
-					console.error("Error al crear la tarea:", error);
-					return { success: false, message: "Error en la conexión" };
-				}
-			},
-
-			// Obtener una tarea específica por su ID (GET)
-			getTaskById: async (taskId) => {
-				const store = getStore();
-				try {
-					const response = await fetch(`${process.env.BACKEND_URL}/api/tasks/${taskId}`, {
-						method: 'GET',
-						headers: {
+							'Content-Type': 'application/json',
 							'Authorization': `Bearer ${store.token}`
-						}
+						},
+						body: JSON.stringify(projectData)
 					});
-
+			
 					if (!response.ok) {
-						throw new Error('Failed to fetch task');
+						const errorData = await response.json();
+						throw new Error(errorData.message || 'Failed to update project');
 					}
-
-					const data = await response.json();
-					return data;
+			
+					const updatedProject = await response.json();
+					const updatedProjects = store.projects.map(project => 
+						project.id === projectId ? updatedProject : project
+					);
+					setStore({ projects: updatedProjects });
+					return { success: true, project: updatedProject };
 				} catch (error) {
-					console.error('Error fetching task:', error);
-					return null;
+					console.error('Error updating project:', error);
+					return { success: false, message: error.message };
 				}
 			},
-
-			createSubtask: async (taskId, subtaskData) => {
+			
+			deleteProject: async (projectId) => {
 				const store = getStore();
 				try {
-					const response = await fetch(`${process.env.BACKEND_URL}/api/tasks/${taskId}/subtasks`, {
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							"Authorization": `Bearer ${store.token}`
-						},
-						body: JSON.stringify(subtaskData)
-					});
-					const data = await response.json();
-					if (response.status === 201) {
-						// Update the store with the new subtask
-						// You might need to adjust this based on how you're storing subtasks
-						return { success: true, message: "Subtarea creada con éxito", subtask: data };
-					} else {
-						return { success: false, message: data.message || "Error al crear la subtarea" };
-					}
-				} catch (error) {
-					console.error("Error al crear la subtarea:", error);
-					return { success: false, message: "Error en la conexión" };
-				}
-			},
-
-			updateTaskStatus: async (taskId, newStatus) => {
-				const store = getStore();
-				try {
-					const response = await fetch(`${process.env.BACKEND_URL}/api/tasks/${taskId}`, {
-						method: "PATCH",
-						headers: {
-							"Content-Type": "application/json",
-							"Authorization": `Bearer ${store.token}`
-						},
-						body: JSON.stringify({ status: newStatus })
-					});
-					const data = await response.json();
-					if (response.status === 200) {
-						// Update the task status in the store
-						const updatedTasks = store.tasks.map(task => 
-							task.id === taskId ? { ...task, status: newStatus } : task
-						);
-						setStore({ tasks: updatedTasks });
-						return { success: true, message: "Estado de la tarea actualizado con éxito", task: data };
-					} else {
-						return { success: false, message: data.message || "Error al actualizar el estado de la tarea" };
-					}
-				} catch (error) {
-					console.error("Error al actualizar el estado de la tarea:", error);
-					return { success: false, message: "Error en la conexión" };
-				}
-			},
-
-			addUserToProject: async (projectId, userId) => {
-				const store = getStore();
-				try {
-					const response = await fetch(`${process.env.BACKEND_URL}/api/projects/${projectId}/members`, {
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							"Authorization": `Bearer ${store.token}`
-						},
-						body: JSON.stringify({ user_id: userId })
-					});
-					const data = await response.json();
-					if (response.status === 201) {
-						// Obtener la información completa del usuario
-						const userInfo = store.organizationUsers.find(user => user.id === userId);
-						if (userInfo) {
-							const updatedProjectMembers = {
-								...store.projectMembers,
-								[projectId]: [...(store.projectMembers[projectId] || []), userInfo]
-							};
-							setStore({ projectMembers: updatedProjectMembers });
-							return { success: true, message: "Usuario añadido al proyecto con éxito" };
-						} else {
-							return { success: false, message: "Usuario no encontrado en la organización" };
-						}
-					} else {
-						return { success: false, message: data.message || "Error al añadir usuario al proyecto" };
-					}
-				} catch (error) {
-					console.error("Error al añadir usuario al proyecto:", error);
-					return { success: false, message: "Error en la conexión" };
-				}
-			},
-
-			getProjectTasks: async (projectId) => {
-				const store = getStore();
-				try {
-					const response = await fetch(`${process.env.BACKEND_URL}/api/projects/${projectId}/tasks`, {
-						method: 'GET',
-						headers: {
-							'Authorization': `Bearer ${store.token}`
-						}
-					});
-
-					if (!response.ok) {
-						throw new Error('Failed to fetch project tasks');
-					}
-
-					const data = await response.json();
-					setStore({ tasks: data });
-					
-					return data;
-				} catch (error) {
-					console.error('Error fetching project tasks:', error);
-					return [];
-				}
-			},
-
-			getProjectMembers: async (projectId) => {
-				const store = getStore();
-				try {
-					const response = await fetch(`${process.env.BACKEND_URL}/api/projects/${projectId}/members`, {
-						method: 'GET',
+					const response = await fetch(`${process.env.BACKEND_URL}/api/project/${projectId}`, {
+						method: 'DELETE',
 						headers: {
 							'Authorization': `Bearer ${store.token}`
 						}
 					});
 			
 					if (!response.ok) {
-						throw new Error('Failed to fetch project members');
+						const errorData = await response.json();
+						throw new Error(errorData.message || 'Failed to delete project');
 					}
 			
-					const members = await response.json();
-			
-					// Obtener la información completa de los usuarios
-					const fullMemberInfo = members.map(member => {
-						const userInfo = store.organizationUsers.find(user => user.id === member.user_id);
-						return userInfo || member; // Si no se encuentra, se mantiene la información original
-					});
-			
-					setStore(prevStore => ({
-						projectMembers: {
-							...prevStore.projectMembers,
-							[projectId]: fullMemberInfo
-						}
-					}));
-			
-					return fullMemberInfo;
+					const updatedProjects = store.projects.filter(project => project.id !== projectId);
+					setStore({ projects: updatedProjects });
+					return { success: true };
 				} catch (error) {
-					console.error('Error fetching project members:', error);
-					return [];
+					console.error('Error deleting project:', error);
+					return { success: false, message: error.message };
 				}
 			},
-
+			
 			getProjects: async () => {
 				const store = getStore();
 				try {
@@ -344,41 +281,167 @@ const getState = ({ getStore, getActions, setStore }) => {
 					const projects = await response.json();
 					setStore({ projects: projects });
 			
-					// Fetch tasks and members for each project
-					for (let project of projects) {
-						await getActions().getProjectTasks(project.id);
-						await getActions().getProjectMembers(project.id);
-					}
-			
 					return projects;
 				} catch (error) {
 					console.error('Error fetching projects:', error);
 					return [];
 				}
 			},
-			
 
-            getUserTasks: async () => {
+			getProjectTasks: async (projectId) => {
 				const store = getStore();
 				try {
-					const response = await fetch(`${process.env.BACKEND_URL}/api/tasks`, {
+					const response = await fetch(`${process.env.BACKEND_URL}/api/project/${projectId}/tasks`, {
 						method: 'GET',
 						headers: {
-							"Authorization": `Bearer ${store.token}`
+							'Authorization': `Bearer ${store.token}`
 						}
 					});
-					if (response.ok) {
-						const tasksData = await response.json();
-						setStore({
-							tasks: tasksData
-						});
-						return tasksData;
-					} else {
-						throw new Error("Failed to fetch user tasks");
+			
+					if (!response.ok) {
+						throw new Error('Failed to fetch project tasks');
 					}
+			
+					const tasks = await response.json();
+					setStore({ 
+						projectTasks: { ...store.projectTasks, [projectId]: tasks }
+					});
+			
+					return tasks;
 				} catch (error) {
-					console.error("Error fetching user tasks:", error);
+					console.error('Error fetching project tasks:', error);
 					return [];
+				}
+			},
+
+			addProjectTask: async (projectId, taskData) => {
+				const store = getStore();
+				try {
+					const response = await fetch(`${process.env.BACKEND_URL}/api/project/${projectId}/tasks`, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'Authorization': `Bearer ${store.token}`
+						},
+						body: JSON.stringify(taskData)
+					});
+			
+					if (!response.ok) {
+						throw new Error('Failed to add project task');
+					}
+			
+					const newTask = await response.json();
+					const updatedTasks = [...(store.projectTasks[projectId] || []), newTask];
+					setStore({ 
+						projectTasks: { ...store.projectTasks, [projectId]: updatedTasks }
+					});
+			
+					return newTask;
+				} catch (error) {
+					console.error('Error adding project task:', error);
+					return null;
+				}
+			},
+
+			getProjectMembers: async (projectId) => {
+				const store = getStore();
+				try {
+					const response = await fetch(`${process.env.BACKEND_URL}/api/project/${projectId}/members`, {
+						method: 'GET',
+						headers: {
+							'Authorization': `Bearer ${store.token}`,
+							'Content-Type': 'application/json'
+						}
+					});
+			
+					if (!response.ok) {
+						throw new Error('Failed to fetch project members');
+					}
+			
+					const members = await response.json();
+					setStore({
+						projectMembers: { ...store.projectMembers, [projectId]: members }
+					});
+			
+					return members;
+				} catch (error) {
+					console.error('Error fetching project members:', error);
+					return [];
+				}
+			},
+
+			addProjectMember: async (projectId, email) => {
+				const store = getStore();
+				try {
+					const response = await fetch(`${process.env.BACKEND_URL}/api/project/${projectId}/members`, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'Authorization': `Bearer ${store.token}`
+						},
+						body: JSON.stringify({ email: email })
+					});
+			
+					const data = await response.json();
+			
+					if (!response.ok) {
+						throw new Error(data.message || 'Failed to add project member');
+					}
+			
+					const updatedMembers = [...(store.projectMembers[projectId] || []), data];
+					setStore({ 
+						projectMembers: { ...store.projectMembers, [projectId]: updatedMembers }
+					});
+			
+					return { success: true, message: 'Miembro agregado exitosamente' };
+				} catch (error) {
+					console.error('Error adding project member:', error);
+					return { success: false, message: error.message };
+				}
+			},
+
+			updateTask: async (taskId, taskData) => {
+				const store = getStore();
+				try {
+					const response = await fetch(`${process.env.BACKEND_URL}/api/task/${taskId}`, {
+						method: 'PUT',
+						headers: {
+							'Content-Type': 'application/json',
+							'Authorization': `Bearer ${store.token}`
+						},
+						body: JSON.stringify(taskData)
+					});
+			
+					if (!response.ok) {
+						throw new Error('Failed to update task');
+					}
+			
+					const updatedTask = await response.json();
+					return updatedTask;
+				} catch (error) {
+					console.error('Error updating task:', error);
+					return null;
+				}
+			},
+
+			deleteTask: async (taskId) => {
+				const store = getStore();
+				try {
+					const response = await fetch(`${process.env.BACKEND_URL}/api/task/${taskId}`, {
+						method: 'DELETE',
+						headers: {
+							'Authorization': `Bearer ${store.token}`
+						}
+					});
+			
+					if (!response.ok) {
+						throw new Error('Failed to delete task');
+					}
+			
+					return true;
+				} catch (error) {
+					console.error('Error deleting task:', error);
+					return false;
 				}
 			},
 
@@ -402,12 +465,11 @@ const getState = ({ getStore, getActions, setStore }) => {
 
 			registerUserAndEnterprise: async (formData) => {
 				try {
+					console.log(formData)
 					const response = await fetch(`${process.env.BACKEND_URL}/api/user`, {
 						method: "POST",
-						headers: {
-							"Content-Type": "application/json"
-						},
-						body: JSON.stringify(formData)
+						
+						body: formData
 					});
 					const data = await response.json();
 					if (response.ok) {
@@ -443,25 +505,72 @@ const getState = ({ getStore, getActions, setStore }) => {
                     return { success: false, message: "Error en la conexión" };
                 }
             },
-			getDeimian: async()=>{
-				try {
-					const response = await fetch(`${process.env.BACKEND_URL}/api/deimian`, {
-						method:"GET",
-						"headers": {
-							"Authorization": `Bearer ${getStore().token}`
-						}
-					})
-					const data = await response.json()
-					console.log(data, "apideimian")
 
-					setStore({
-						taskDeimian: data
-					})
-					
+			// dashboard
+			getProjectProgress: async () => {
+				const store = getStore();
+				try {
+				  const resp = await fetch(`${process.env.BACKEND_URL}/api/dashboard/project-progress`, {
+					headers: { "Authorization": `Bearer ${store.token}` }
+				  });
+				  const data = await resp.json();
+				  setStore({ projectProgress: data });
 				} catch (error) {
-					console.log(error)
+				  console.error("Error fetching project progress", error);
 				}
-			}
+			  },
+		
+			  getTaskCompletionRate: async () => {
+				const store = getStore();
+				try {
+				  const resp = await fetch(`${process.env.BACKEND_URL}/api/dashboard/task-completion-rate`, {
+					headers: { "Authorization": `Bearer ${store.token}` }
+				  });
+				  const data = await resp.json();
+				  setStore({ taskCompletionRate: data });
+				} catch (error) {
+				  console.error("Error fetching task completion rate", error);
+				}
+			  },
+		
+			  getTaskDistribution: async () => {
+				const store = getStore();
+				try {
+				  const resp = await fetch(`${process.env.BACKEND_URL}/api/dashboard/task-distribution`, {
+					headers: { "Authorization": `Bearer ${store.token}` }
+				  });
+				  const data = await resp.json();
+				  setStore({ taskDistribution: data });
+				} catch (error) {
+				  console.error("Error fetching task distribution", error);
+				}
+			  },
+		
+			  getUserProductivity: async () => {
+				const store = getStore();
+				try {
+				  const resp = await fetch(`${process.env.BACKEND_URL}/api/dashboard/user-productivity`, {
+					headers: { "Authorization": `Bearer ${store.token}` }
+				  });
+				  const data = await resp.json();
+				  setStore({ userProductivity: data });
+				} catch (error) {
+				  console.error("Error fetching user productivity", error);
+				}
+			  },
+
+			  getGanttData: async () => {
+				const store = getStore();
+				try {
+				  const resp = await fetch(`${process.env.BACKEND_URL}/api/dashboard/gantt-data`, {
+					headers: { "Authorization": `Bearer ${store.token}` }
+				  });
+				  const data = await resp.json();
+				  setStore({ ganttData: data });
+				} catch (error) {
+				  console.error("Error fetching Gantt data", error);
+				}
+			  }
 		}
 	};
 };
