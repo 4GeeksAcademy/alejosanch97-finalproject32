@@ -67,7 +67,7 @@ def add_user():
         "address": data_form.get("address"),
     }
 
-   
+    print(user_data)
     
     if user_data.get("email", None) is None or user_data.get("password", None) is None or user_data.get("last_name", None) is None:
         return jsonify({"message": "Se requieren email, contraseña y apellido"}), 400

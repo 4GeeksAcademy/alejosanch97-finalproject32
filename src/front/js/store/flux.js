@@ -465,12 +465,11 @@ const getState = ({ getStore, getActions, setStore }) => {
 
 			registerUserAndEnterprise: async (formData) => {
 				try {
+					console.log(formData)
 					const response = await fetch(`${process.env.BACKEND_URL}/api/user`, {
 						method: "POST",
-						headers: {
-							"Content-Type": "application/json"
-						},
-						body: JSON.stringify(formData)
+						
+						body: formData
 					});
 					const data = await response.json();
 					if (response.ok) {

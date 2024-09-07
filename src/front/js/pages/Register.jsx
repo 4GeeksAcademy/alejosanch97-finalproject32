@@ -7,48 +7,64 @@ export const Register = () => {
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
-        user: {
-            first_name: "",
-            last_name: "",
-            username: "",
-            avatar: "",
-            email: "",
-            password: "",
-            role_id: "",
-        },
-        enterprise: {
-            name: "",
-            address: ""
-        }
+
+        first_name: "",
+        last_name: "",
+        username: "",
+        avatar: "",
+        email: "",
+        password: "",
+        role_id: "",
+        name: "",
+        address: ""
+
+
+
+
     });
 
     const [error, setError] = useState("");
 
     const handleChange = (event) => {
-        const { name, value } = event.target;
-        if (name === "name" || name === "address") {
-            setFormData(prevState => ({
-                ...prevState,
-                enterprise: {
-                    ...prevState.enterprise,
-                    [name]: value
-                }
-            }));
-        } else {
-            setFormData(prevState => ({
-                ...prevState,
-                user: {
-                    ...prevState.user,
-                    [name]: value
-                }
-            }));
-        }
+        // const { name, value } = event.target;
+        // if (name === "name" || name === "address") {
+        //     setFormData(prevState => ({
+        //         ...prevState,
+        //         enterprise: {
+        //             ...prevState.enterprise,
+        //             [name]: value
+        //         }
+        //     }));
+        // } else {
+        //     setFormData(prevState => ({
+        //         ...prevState,
+        //         user: {
+        //             ...prevState.user,
+        //             [name]: value
+        //         }
+        //     }));
+        // }
+        setFormData({
+            ...formData,
+            [event.target.name]: event.target.value
+        })
     };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
         try {
-            const result = await actions.registerUserAndEnterprise(formData);
+            const newformData = new FormData()
+            newformData.append("first_name", formData.first_name)
+            newformData.append("last_name", formData.last_name)
+            newformData.append("username", formData.username)
+            newformData.append("avatar", formData.avatar)
+            newformData.append("email", formData.email)
+            newformData.append("password", formData.password)
+            newformData.append("role_id", formData.role_id)
+            newformData.append("name", formData.name)
+            newformData.append("address", formData.address)
+
+            const result = await actions.registerUserAndEnterprise(newformData);
             if (result.success) {
                 navigate("/login");
             } else {
@@ -72,7 +88,7 @@ export const Register = () => {
                         name="first_name"
                         id="first_name"
                         placeholder="Nombre"
-                        value={formData.user.first_name}
+                        value={formData.first_name}
                         className="form-control"
                         onChange={handleChange}
                         required
@@ -85,7 +101,7 @@ export const Register = () => {
                         name="last_name"
                         id="last_name"
                         placeholder="Apellido"
-                        value={formData.user.last_name}
+                        value={formData.last_name}
                         className="form-control"
                         onChange={handleChange}
                         required
@@ -98,7 +114,7 @@ export const Register = () => {
                         name="username"
                         id="username"
                         placeholder="Nombre de usuario"
-                        value={formData.user.username}
+                        value={formData.username}
                         className="form-control"
                         onChange={handleChange}
                         required
@@ -114,7 +130,7 @@ export const Register = () => {
 
                         className="form-control"
                         onChange={(event) => {
-                            setFormData({ ...user, avatar: event.target.files[0] })
+                            setFormData({ ...formData, avatar: event.target.files[0] })
                         }}
                         required
                     />
@@ -127,7 +143,7 @@ export const Register = () => {
                         name="email"
                         id="email"
                         placeholder="Email"
-                        value={formData.user.email}
+                        value={formData.email}
                         className="form-control"
                         onChange={handleChange}
                         required
@@ -140,7 +156,7 @@ export const Register = () => {
                         name="password"
                         id="password"
                         placeholder="Contraseña"
-                        value={formData.user.password}
+                        value={formData.password}
                         className="form-control"
                         onChange={handleChange}
                         required
@@ -152,7 +168,7 @@ export const Register = () => {
                         name="role_id"
                         id="role_id"
                         className="form-select"
-                        value={formData.user.role_id}
+                        value={formData.role_id}
                         onChange={handleChange}
                         required
                     >
@@ -169,7 +185,7 @@ export const Register = () => {
                         name="name"
                         id="name"
                         placeholder="Nombre de la Empresa"
-                        value={formData.enterprise.name}
+                        value={formData.name}
                         className="form-control"
                         onChange={handleChange}
                         required
@@ -182,7 +198,7 @@ export const Register = () => {
                         name="address"
                         id="address"
                         placeholder="Dirección de la Empresa"
-                        value={formData.enterprise.address}
+                        value={formData.address}
                         className="form-control"
                         onChange={handleChange}
                         required

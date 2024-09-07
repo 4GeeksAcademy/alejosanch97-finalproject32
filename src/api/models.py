@@ -63,7 +63,8 @@ class Projects(db.Model):
             "end_date": self.end_date,
             "enterprise_id": self.enterprise_id,
             "user_id": self.user_id,
-            "progress": self.calculate_progress()
+            "progress": self.calculate_progress(),
+            "task": list(map(lambda item: item.serialize(), self.tasks))
         }
     
     def calculate_progress(self):
