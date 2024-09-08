@@ -1,37 +1,38 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import "../../styles/navbar.css";
 
 export const Navbar = () => {
     return (
-        <nav class="navbar navbar-expand-lg bg-body-tertiary">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="#">Productividad</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav">
-                        <li class="nav-item">
-                            <Link className="nav-link" to="/">Home</Link>
-                        </li>
-                        <li class="nav-item">
-                            <Link className="nav-link" to="/login">Login</Link>
-                        </li>
-                        <li class="nav-item">
-                            <Link className="nav-link" to="/tasks">Tasks</Link>
-                        </li>
-                        <li class="nav-item">
-                            <Link className="nav-link" to="/profile">Profile</Link>
-                        </li>
+        <nav className="navbar">
+            <div className="navbar-container">
+                <div className="navbar-left">
+                    <Link to="/" className="navbar-logo">
+                        <img src="https://i.imgur.com/Nkysfkd.jpeg" alt="Logo" className="logo-image" />
+                    </Link>
+                    <div className="navbar-links">
+                        <Link to="/precios" className="nav-link">Precios</Link>
                         <li class="nav-item">
                             <Link className="nav-link" to="/projectmanager">Project Manager</Link>
                         </li>
                         <li class="nav-item">
                             <Link className="nav-link" to="/taskmanager">Task Manager</Link>
                         </li>
-                    </ul>
+                    </div>
+                </div>
+                <div className="navbar-center">
+
+                </div>
+                <div className="navbar-right">
+                    <Link to="/login" className="nav-link">Iniciar sesión</Link>
+                    <li class="nav-item">
+                        <Link className="nav-link" to="/profile">Profile</Link>
+                    </li>
+                    <button className="contact-sales-btn">Contactar a ventas</button>
+                    <button className="start-now-btn">Empezar ahora →</button>
                 </div>
             </div>
         </nav>
-    )
+    );
 }
+
