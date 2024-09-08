@@ -83,7 +83,7 @@ export const ProjectManager = () => {
             await actions.addProjectTask(selectedProject.id, newTask);
             setNewTask({ name: '', description: '', status: 'Pending', due_date: '', priority: 'medium' });
             setError('');
-            
+
         } catch (error) {
             setError(error.message);
         }
@@ -120,7 +120,7 @@ export const ProjectManager = () => {
     const handleChangeTaskStatus = async (taskId, newStatus) => {
         await actions.updateTask(taskId, { status: newStatus });
         actions.getProjectTasks(selectedProject.id);
-        
+
     };
 
     const handleChangeTaskPriority = async (taskId, newPriority) => {
@@ -290,28 +290,52 @@ export const ProjectManager = () => {
                                                 <li key={task.id} className="list-group-item">
                                                     {editingTask && editingTask.id === task.id ? (
                                                         <div className="edit-task-form">
-                                                            <input
-                                                                type="text"
-                                                                className="form-control mb-2"
-                                                                value={editingTask.name}
-                                                                onChange={(e) => setEditingTask({ ...editingTask, name: e.target.value })}
-                                                            />
-                                                            <input
-                                                                type="text"
-                                                                className="form-control mb-2"
-                                                                value={editingTask.description}
-                                                                onChange={(e) => setEditingTask({ ...editingTask, description: e.target.value })}
-                                                            />
-                                                            <input
-                                                                type="date"
-                                                                className="form-control mb-2"
-                                                                value={editingTask.due_date}
-                                                                min={getCurrentDate()}
-                                                                onChange={(e) => setEditingTask({ ...editingTask, due_date: e.target.value })}
-                                                            />
-                                                            <div className="d-flex justify-content-end">
-                                                                <button className="btn btn-success mr-2" onClick={handleUpdateTask}>Save</button>
-                                                                <button className="btn btn-secondary" onClick={() => setEditingTask(null)}>Cancel</button>
+                                                            <div className="form-group">
+                                                                <label htmlFor={`editTaskName-${task.id}`}>Task Name:</label>
+                                                                <input
+                                                                    id={`editTaskName-${task.id}`}
+                                                                    type="text"
+                                                                    className="form-control"
+                                                                    value={editingTask.name}
+                                                                    onChange={(e) => setEditingTask({ ...editingTask, name: e.target.value })}
+                                                                />
+                                                            </div>
+                                                            <div className="form-group">
+                                                                <label htmlFor={`editTaskDescription-${task.id}`}>Description:</label>
+                                                                <textarea
+                                                                    id={`editTaskDescription-${task.id}`}
+                                                                    className="form-control"
+                                                                    value={editingTask.description}
+                                                                    onChange={(e) => setEditingTask({ ...editingTask, description: e.target.value })}
+                                                                ></textarea>
+                                                            </div>
+                                                            <div className="form-group">
+                                                                <label htmlFor={`editTaskDueDate-${task.id}`}>Due Date:</label>
+                                                                <input
+                                                                    id={`editTaskDueDate-${task.id}`}
+                                                                    type="date"
+                                                                    className="form-control"
+                                                                    value={editingTask.due_date}
+                                                                    min={getCurrentDate()}
+                                                                    onChange={(e) => setEditingTask({ ...editingTask, due_date: e.target.value })}
+                                                                />
+                                                            </div>
+                                                            <div className="form-group">
+                                                                <label htmlFor={`editTaskPriority-${task.id}`}>Priority:</label>
+                                                                <select
+                                                                    id={`editTaskPriority-${task.id}`}
+                                                                    className="form-control"
+                                                                    value={editingTask.priority}
+                                                                    onChange={(e) => setEditingTask({ ...editingTask, priority: e.target.value })}
+                                                                >
+                                                                    <option value="low">Low</option>
+                                                                    <option value="medium">Medium</option>
+                                                                    <option value="high">High</option>
+                                                                </select>
+                                                            </div>
+                                                            <div className="form-group text-right">
+                                                                <button className="btn btn-secondary mr-2" onClick={() => setEditingTask(null)}>Cancel</button>
+                                                                <button className="btn btn-success" onClick={handleUpdateTask}>Save</button>
                                                             </div>
                                                         </div>
                                                     ) : (
