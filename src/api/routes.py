@@ -329,17 +329,23 @@ def delete_project(project_id):
     # Permitir acceso si el usuario es el creador del proyecto o es un administrador
     if project.user_id != current_user_id and current_user.role_id != 1:  # Asumiendo que role_id 1 es para administradores
         return jsonify({"message": "Unauthorized access"}), 403
-
+    
     try:
-        # Delete related tasks
+        # Eliminar comentarios de tareas asociados al proyecto
+        TaskComments.query.filter(TaskComments.task_id.in_(
+            Tasks.query.with_entities(Tasks.id).filter_by(project_id=project_id)
+        )).delete(synchronize_session=False)
+        
+        # Eliminar tareas asociadas al proyecto
         Tasks.query.filter_by(project_id=project_id).delete()
         
-        # Delete related project members
+        # Eliminar miembros del proyecto
         ProjectMembers.query.filter_by(project_id=project_id).delete()
         
-        # Now we can safely delete the project
+        # Finalmente, eliminar el proyecto
         db.session.delete(project)
         db.session.commit()
+        
         return jsonify({"message": "Project and related data deleted successfully"}), 200
     except Exception as e:
         db.session.rollback()

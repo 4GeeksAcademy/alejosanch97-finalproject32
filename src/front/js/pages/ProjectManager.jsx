@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Context } from "../store/appContext";
+import "../../styles/projectmanager.css";
 
 export const ProjectManager = () => {
     const { store, actions } = useContext(Context);
@@ -14,6 +15,7 @@ export const ProjectManager = () => {
     const [showTaskComments, setShowTaskComments] = useState({});
     const [newTaskComment, setNewTaskComment] = useState({});
     const [newComment, setNewComment] = useState('');
+    const [showAddTaskModal, setShowAddTaskModal] = useState(false);
 
     useEffect(() => {
         if (selectedProject) {
@@ -81,8 +83,7 @@ export const ProjectManager = () => {
             await actions.addProjectTask(selectedProject.id, newTask);
             setNewTask({ name: '', description: '', status: 'Pending', due_date: '', priority: 'medium' });
             setError('');
-            // Update the task status distribution
-            actions.getUserTaskStatusDistribution();
+            
         } catch (error) {
             setError(error.message);
         }
@@ -101,7 +102,6 @@ export const ProjectManager = () => {
                 );
                 actions.setProjectTasks(selectedProject.id, updatedTasks);
                 // Update the task status distribution
-                actions.getUserTaskStatusDistribution();
                 setEditingTask(null);
                 setError('');
             }
@@ -181,13 +181,16 @@ export const ProjectManager = () => {
     };
 
     const handleDeleteProject = async (projectId) => {
-        if (window.confirm('Are you sure you want to delete this project?')) {
-            await actions.deleteProject(projectId);
-            setSelectedProject(null);
-            actions.getProjects();
+        if (window.confirm('Are you sure you want to delete this project? This will also delete all associated tasks and comments.')) {
+            const result = await actions.deleteProject(projectId);
+            if (result.success) {
+                setSelectedProject(null);
+                actions.getProjects();
+            } else {
+                setError(result.message);
+            }
         }
     };
-
     const calculateProgress = (tasks) => {
         if (!tasks || tasks.length === 0) return 0;
         const completedTasks = tasks.filter(task => task.status === 'Completed').length;
@@ -195,206 +198,237 @@ export const ProjectManager = () => {
     };
 
     return (
-        <div className="container mt-4">
-            <h1>Project Manager</h1>
+        <div className="container-fluid mt-4 project-manager">
+            <h1 className="text-center mb-4">Project Manager</h1>
             {error && <div className="alert alert-danger">{error}</div>}
             <div className="row">
-                <div className="col-md-4">
-                    <h2>Projects</h2>
-                    <ul className="list-group">
-                        {store.projects.map(project => (
-                            <li
-                                key={project.id}
-                                className={`list-group-item ${selectedProject && selectedProject.id === project.id ? 'active' : ''}`}
-                            >
-                                <span onClick={() => setSelectedProject(project)}>{project.name}</span>
-                                <div className="float-right">
-                                    <button className="btn btn-sm btn-warning mr-2" onClick={() => handleEditProject(project)}>Edit</button>
-                                    <button className="btn btn-sm btn-danger" onClick={() => handleDeleteProject(project.id)}>Delete</button>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
+                <div className="col-md-3">
+                    <div className="card">
+                        <div className="card-header bg-primary text-white">
+                            <h2 className="h4 mb-0">Projects</h2>
+                        </div>
+                        <div className="card-body p-0">
+                            <ul className="list-group list-group-flush">
+                                {store.projects.map(project => (
+                                    <li
+                                        key={project.id}
+                                        className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${selectedProject && selectedProject.id === project.id ? 'selected-project' : ''}`}
+                                        onClick={() => setSelectedProject(project)}
+                                    >
+                                        <span>{project.name}</span>
+                                        <div className="project-actions">
+                                            <button className="btn btn-sm btn-outline-warning" onClick={(e) => { e.stopPropagation(); handleEditProject(project); }}>
+                                                <i className="fas fa-edit"></i>
+                                            </button>
+                                            <button className="btn btn-sm btn-outline-danger" onClick={(e) => { e.stopPropagation(); handleDeleteProject(project.id); }}>
+                                                <i className="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
                 </div>
                 {selectedProject && (
-                    <div className="col-md-8">
-                        <h2>{selectedProject.name}</h2>
-                        <p>{selectedProject.description}</p>
-                        <p><strong>Priority:</strong> {selectedProject.priority}</p>
-                        <button className="btn btn-info mb-3" onClick={() => setShowProjectComments(!showProjectComments)}>
-                            {showProjectComments ? 'Hide Comments' : 'Show Comments'}
-                        </button>
-                        {showProjectComments && (
-                            <div>
-                                <h4>Project Comments</h4>
-                                <ul className="list-group mb-3">
-                                    {store.projectComments[selectedProject.id]?.map(comment => (
-                                        <li key={comment.id} className="list-group-item">
-                                            <strong>{comment.user_name}</strong>: {comment.content}
-                                        </li>
-                                    ))}
-                                </ul>
-                                <input
-                                    type="text"
-                                    className="form-control mb-2"
-                                    placeholder="Add a comment"
-                                    value={newComment}
-                                    onChange={(e) => setNewComment(e.target.value)}
-                                />
-                                <button className="btn btn-primary mb-3" onClick={handleAddProjectComment}>Add Comment</button>
+                    <div className="col-md-9">
+                        <div className="card">
+                            <div className="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                                <h2 className="h4 mb-0">{selectedProject.name}</h2>
+                                <span className={`badge badge-${selectedProject.priority === 'high' ? 'danger' : selectedProject.priority === 'medium' ? 'warning' : 'success'}`}>
+                                    {selectedProject.priority.charAt(0).toUpperCase() + selectedProject.priority.slice(1)} Priority
+                                </span>
                             </div>
-                        )}
-                        <div className="row">
-                            <div className="col-md-6">
-                                <h3>Tasks</h3>
-                                {store.projectTasks[selectedProject.id] && (
-                                    <div className="progress mb-3">
-                                        <div
-                                            className="progress-bar"
-                                            role="progressbar"
-                                            style={{ width: `${calculateProgress(store.projectTasks[selectedProject.id])}%` }}
-                                            aria-valuenow={calculateProgress(store.projectTasks[selectedProject.id])}
-                                            aria-valuemin="0"
-                                            aria-valuemax="100"
-                                        >
-                                            {calculateProgress(store.projectTasks[selectedProject.id])}%
+                            <div className="card-body">
+                                <p className="lead">{selectedProject.description}</p>
+                                <button className="btn btn-outline-info mb-3" onClick={() => setShowProjectComments(!showProjectComments)}>
+                                    {showProjectComments ? 'Hide Comments' : 'Show Comments'}
+                                </button>
+                                {showProjectComments && (
+                                    <div className="mb-4">
+                                        <h4>Project Comments</h4>
+                                        <ul className="list-group mb-3">
+                                            {store.projectComments[selectedProject.id]?.map(comment => (
+                                                <li key={comment.id} className="list-group-item">
+                                                    <strong>{comment.user_name}</strong>: {comment.content}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <div className="input-group">
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                placeholder="Add a comment"
+                                                value={newComment}
+                                                onChange={(e) => setNewComment(e.target.value)}
+                                            />
+                                            <div className="input-group-append">
+                                                <button className="btn btn-primary" onClick={handleAddProjectComment}>Add Comment</button>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
-                                <ul className="list-group">
-                                    {store.projectTasks[selectedProject.id]?.map(task => (
-                                        <li key={task.id} className="list-group-item">
-                                            {editingTask && editingTask.id === task.id ? (
-                                                <>
-                                                    <input
-                                                        type="text"
-                                                        className="form-control mb-2"
-                                                        value={editingTask.name}
-                                                        onChange={(e) => setEditingTask({ ...editingTask, name: e.target.value })}
-                                                    />
-                                                    <input
-                                                        type="text"
-                                                        className="form-control mb-2"
-                                                        value={editingTask.description}
-                                                        onChange={(e) => setEditingTask({ ...editingTask, description: e.target.value })}
-                                                    />
-                                                    <input
-                                                        type="date"
-                                                        className="form-control mb-2"
-                                                        value={editingTask.due_date}
-                                                        min={getCurrentDate()}
-                                                        onChange={(e) => setEditingTask({ ...editingTask, due_date: e.target.value })}
-                                                    />
-
-                                                    <button className="btn btn-success mr-2" onClick={handleUpdateTask}>Save</button>
-                                                    <button className="btn btn-secondary" onClick={() => setEditingTask(null)}>Cancel</button>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <span>{task.name} - {task.status} - Priority: {task.priority}</span>
-                                                    <div className="float-right">
-                                                        <select
-                                                            className="form-control form-control-sm d-inline-block mr-2"
-                                                            style={{ width: 'auto' }}
-                                                            value={task.status}
-                                                            onChange={(e) => handleChangeTaskStatus(task.id, e.target.value)}
-                                                        >
-                                                            <option value="Pending">Pending</option>
-                                                            <option value="In Progress">In Progress</option>
-                                                            <option value="Completed">Completed</option>
-                                                        </select>
-                                                        <select
-                                                            className="form-control form-control-sm d-inline-block mr-2"
-                                                            style={{ width: 'auto' }}
-                                                            value={task.priority}
-                                                            onChange={(e) => handleChangeTaskPriority(task.id, e.target.value)}
-                                                        >
-                                                            <option value="low">Low</option>
-                                                            <option value="medium">Medium</option>
-                                                            <option value="high">High</option>
-                                                        </select>
-                                                        <button className="btn btn-sm btn-warning mr-2" onClick={() => handleEditTask(task)}>Edit</button>
-                                                        <button className="btn btn-sm btn-danger mr-2" onClick={() => handleDeleteTask(task.id)}>Delete</button>
-                                                        <button className="btn btn-sm btn-info" onClick={() => toggleTaskComments(task.id)}>
-                                                            {showTaskComments[task.id] ? 'Hide Comments' : 'Show Comments'}
-                                                        </button>
-                                                    </div>
-                                                    {showTaskComments[task.id] && (
-                                                        <div className="mt-2">
-                                                            <h6>Task Comments</h6>
-                                                            <ul className="list-group mb-2">
-                                                                {store.taskComments[task.id]?.map(comment => (
-                                                                    <li key={comment.id} className="list-group-item">
-                                                                        <strong>{comment.user_name}</strong>: {comment.content}
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
+                                <div className="row">
+                                    <div className="col-md-8">
+                                        <h3>Tasks</h3>
+                                        {store.projectTasks[selectedProject.id] && (
+                                            <div className="progress mb-3">
+                                                <div
+                                                    className="progress-bar bg-success"
+                                                    role="progressbar"
+                                                    style={{ width: `${calculateProgress(store.projectTasks[selectedProject.id])}%` }}
+                                                    aria-valuenow={calculateProgress(store.projectTasks[selectedProject.id])}
+                                                    aria-valuemin="0"
+                                                    aria-valuemax="100"
+                                                >
+                                                    {calculateProgress(store.projectTasks[selectedProject.id])}%
+                                                </div>
+                                            </div>
+                                        )}
+                                        <ul className="list-group">
+                                            {store.projectTasks[selectedProject.id]?.map(task => (
+                                                <li key={task.id} className="list-group-item">
+                                                    {editingTask && editingTask.id === task.id ? (
+                                                        <div className="edit-task-form">
                                                             <input
                                                                 type="text"
                                                                 className="form-control mb-2"
-                                                                placeholder="Add a comment"
-                                                                value={newTaskComment[task.id] || ''}
-                                                                onChange={(e) => setNewTaskComment({ ...newTaskComment, [task.id]: e.target.value })}
+                                                                value={editingTask.name}
+                                                                onChange={(e) => setEditingTask({ ...editingTask, name: e.target.value })}
                                                             />
-                                                            <button className="btn btn-primary btn-sm" onClick={() => handleAddTaskComment(task.id)}>Add Comment</button>
+                                                            <input
+                                                                type="text"
+                                                                className="form-control mb-2"
+                                                                value={editingTask.description}
+                                                                onChange={(e) => setEditingTask({ ...editingTask, description: e.target.value })}
+                                                            />
+                                                            <input
+                                                                type="date"
+                                                                className="form-control mb-2"
+                                                                value={editingTask.due_date}
+                                                                min={getCurrentDate()}
+                                                                onChange={(e) => setEditingTask({ ...editingTask, due_date: e.target.value })}
+                                                            />
+                                                            <div className="d-flex justify-content-end">
+                                                                <button className="btn btn-success mr-2" onClick={handleUpdateTask}>Save</button>
+                                                                <button className="btn btn-secondary" onClick={() => setEditingTask(null)}>Cancel</button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="task-item">
+                                                            <div className="d-flex justify-content-between align-items-center mb-2">
+                                                                <h5 className="mb-0">{task.name}</h5>
+                                                                <div>
+                                                                    <span className={`badge badge-${task.status === 'Completed' ? 'success' : task.status === 'In Progress' ? 'warning' : 'secondary'} mr-2`}>
+                                                                        {task.status}
+                                                                    </span>
+                                                                    <span className={`badge badge-${task.priority === 'high' ? 'danger' : task.priority === 'medium' ? 'warning' : 'info'}`}>
+                                                                        {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} Priority
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <p className="mb-2">{task.description}</p>
+                                                            <div className="d-flex justify-content-between align-items-center">
+                                                                <small className="text-muted">Due: {new Date(task.due_date).toLocaleDateString()}</small>
+                                                                <div className="task-actions">
+                                                                    <select
+                                                                        className="form-control form-control-sm"
+                                                                        value={task.status}
+                                                                        onChange={(e) => handleChangeTaskStatus(task.id, e.target.value)}
+                                                                    >
+                                                                        <option value="Pending">Pending</option>
+                                                                        <option value="In Progress">In Progress</option>
+                                                                        <option value="Completed">Completed</option>
+                                                                    </select>
+                                                                    <select
+                                                                        className="form-control form-control-sm"
+                                                                        value={task.priority}
+                                                                        onChange={(e) => handleChangeTaskPriority(task.id, e.target.value)}
+                                                                    >
+                                                                        <option value="low">Low</option>
+                                                                        <option value="medium">Medium</option>
+                                                                        <option value="high">High</option>
+                                                                    </select>
+                                                                    <button className="btn btn-sm btn-outline-warning" onClick={() => handleEditTask(task)}>
+                                                                        <i className="fas fa-edit"></i>
+                                                                    </button>
+                                                                    <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteTask(task.id)}>
+                                                                        <i className="fas fa-trash"></i>
+                                                                    </button>
+                                                                    <button className="btn btn-sm btn-outline-info" onClick={() => toggleTaskComments(task.id)}>
+                                                                        <i className="fas fa-comments"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            {showTaskComments[task.id] && (
+                                                                <div className="mt-3">
+                                                                    <h6>Task Comments</h6>
+                                                                    <ul className="list-group mb-2">
+                                                                        {store.taskComments[task.id]?.map(comment => (
+                                                                            <li key={comment.id} className="list-group-item py-2">
+                                                                                <strong>{comment.user_name}</strong>: {comment.content}
+                                                                            </li>
+                                                                        ))}
+                                                                    </ul>
+                                                                    <div className="input-group">
+                                                                        <input
+                                                                            type="text"
+                                                                            className="form-control"
+                                                                            placeholder="Add a comment"
+                                                                            value={newTaskComment[task.id] || ''}
+                                                                            onChange={(e) => setNewTaskComment({ ...newTaskComment, [task.id]: e.target.value })}
+                                                                        />
+                                                                        <div className="input-group-append">
+                                                                            <button className="btn btn-primary" onClick={() => handleAddTaskComment(task.id)}>Add</button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
-                                                </>
-                                            )}
-                                        </li>
-                                    ))}
-                                </ul>
-                                <h4 className="mt-3">Add Task</h4>
-                                <input
-                                    type="text"
-                                    className="form-control mb-2"
-                                    placeholder="Task Name"
-                                    value={newTask.name}
-                                    onChange={(e) => setNewTask({ ...newTask, name: e.target.value })}
-                                />
-                                <input
-                                    type="text"
-                                    className="form-control mb-2"
-                                    placeholder="Description"
-                                    value={newTask.description}
-                                    onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                                />
-                                <input
-                                    type="date"
-                                    className="form-control mb-2"
-                                    value={newTask.due_date}
-                                    min={getCurrentDate()}
-                                    onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
-                                />
-                                <select
-                                    className="form-control mb-2"
-                                    value={newTask.priority}
-                                    onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-                                >
-                                    <option value="low">Low</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="high">High</option>
-                                </select>
-                                <button className="btn btn-primary" onClick={handleAddTask}>Add Task</button>
-                            </div>
-                            <div className="col-md-6">
-                                <h3>Members</h3>
-                                <ul className="list-group">
-                                    {store.projectMembers[selectedProject?.id]?.map(member => (
-                                        <li key={member.id} className="list-group-item">
-                                            {member.name} - {member.email}
-                                        </li>
-                                    ))}
-                                </ul>
-                                <h4 className="mt-3">Add Member</h4>
-                                <input
-                                    type="email"
-                                    className="form-control mb-2"
-                                    placeholder="User Email"
-                                    value={newMemberEmail}
-                                    onChange={(e) => setNewMemberEmail(e.target.value)}
-                                />
-                                <button className="btn btn-primary" onClick={handleAddMember}>Add Member</button>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <button className="btn btn-primary mt-3" onClick={() => setShowAddTaskModal(true)}>Add Task</button>
+                                    </div>
+                                    <div className="col-md-4">
+                                        <div className="card">
+                                            <div className="card-header bg-secondary text-white">
+                                                <h3 className="h5 mb-0">Project Members</h3>
+                                            </div>
+                                            <div className="card-body">
+                                                <ul className="list-group">
+                                                    {store.projectMembers[selectedProject?.id]?.map(member => (
+                                                        <li key={member.id} className="list-group-item d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <strong>{member.name}</strong>
+                                                                <br />
+                                                                <small>{member.email}</small>
+                                                            </div>
+                                                            <span className="badge badge-primary badge-pill">Member</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                                <h4 className="mt-4">Add Member</h4>
+                                                <form onSubmit={(e) => { e.preventDefault(); handleAddMember(); }}>
+                                                    <div className="input-group mb-3">
+                                                        <input
+                                                            type="email"
+                                                            className="form-control"
+                                                            placeholder="User Email"
+                                                            value={newMemberEmail}
+                                                            onChange={(e) => setNewMemberEmail(e.target.value)}
+                                                            required
+                                                        />
+                                                        <div className="input-group-append">
+                                                            <button className="btn btn-primary" type="submit">Add</button>
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -411,44 +445,121 @@ export const ProjectManager = () => {
                                 </button>
                             </div>
                             <div className="modal-body">
-                                <input
-                                    type="text"
-                                    className="form-control mb-2"
-                                    value={editingProject.name}
-                                    onChange={(e) => setEditingProject({ ...editingProject, name: e.target.value })}
-                                />
-                                <textarea
-                                    className="form-control mb-2"
-                                    value={editingProject.description}
-                                    onChange={(e) => setEditingProject({ ...editingProject, description: e.target.value })}
-                                />
-                                <select
-                                    className="form-control mb-2"
-                                    value={editingProject.priority}
-                                    onChange={(e) => setEditingProject({ ...editingProject, priority: e.target.value })}
-                                >
-                                    <option value="low">Low</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="high">High</option>
-                                </select>
-                                <input
-                                    type="date"
-                                    className="form-control mb-2"
-                                    value={editingProject.start_date}
-                                    min={getCurrentDate()}
-                                    onChange={(e) => setEditingProject({ ...editingProject, start_date: e.target.value })}
-                                />
-                                <input
-                                    type="date"
-                                    className="form-control mb-2"
-                                    value={editingProject.end_date}
-                                    min={editingProject.start_date || getCurrentDate()}
-                                    onChange={(e) => setEditingProject({ ...editingProject, end_date: e.target.value })}
-                                />
+                                <div className="form-group">
+                                    <label>Project Name</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        value={editingProject.name}
+                                        onChange={(e) => setEditingProject({ ...editingProject, name: e.target.value })}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Description</label>
+                                    <textarea
+                                        className="form-control"
+                                        value={editingProject.description}
+                                        onChange={(e) => setEditingProject({ ...editingProject, description: e.target.value })}
+                                    ></textarea>
+                                </div>
+                                <div className="form-group">
+                                    <label>Priority</label>
+                                    <select
+                                        className="form-control"
+                                        value={editingProject.priority}
+                                        onChange={(e) => setEditingProject({ ...editingProject, priority: e.target.value })}
+                                    >
+                                        <option value="low">Low</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label>Start Date</label>
+                                    <input
+                                        type="date"
+                                        className="form-control"
+                                        value={editingProject.start_date}
+                                        min={getCurrentDate()}
+                                        onChange={(e) => setEditingProject({ ...editingProject, start_date: e.target.value })}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>End Date</label>
+                                    <input
+                                        type="date"
+                                        className="form-control"
+                                        value={editingProject.end_date}
+                                        min={editingProject.start_date || getCurrentDate()}
+                                        onChange={(e) => setEditingProject({ ...editingProject, end_date: e.target.value })}
+                                    />
+                                </div>
                             </div>
                             <div className="modal-footer">
                                 <button type="button" className="btn btn-secondary" onClick={() => setEditingProject(null)}>Close</button>
                                 <button type="button" className="btn btn-primary" onClick={handleUpdateProject}>Save changes</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {showAddTaskModal && (
+                <div className="modal" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="modal-dialog">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">Add New Task</h5>
+                                <button type="button" className="close" onClick={() => setShowAddTaskModal(false)}>
+                                    <span>&times;</span>
+                                </button>
+                            </div>
+                            <div className="modal-body">
+                                <form onSubmit={(e) => { e.preventDefault(); handleAddTask(); setShowAddTaskModal(false); }}>
+                                    <div className="form-group">
+                                        <label>Task Name:</label>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            value={newTask.name}
+                                            onChange={(e) => setNewTask({ ...newTask, name: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Description:</label>
+                                        <textarea
+                                            className="form-control"
+                                            value={newTask.description}
+                                            onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                                            required
+                                        ></textarea>
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Due Date:</label>
+                                        <input
+                                            type="date"
+                                            className="form-control"
+                                            value={newTask.due_date}
+                                            min={getCurrentDate()}
+                                            onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Priority:</label>
+                                        <select
+                                            className="form-control"
+                                            value={newTask.priority}
+                                            onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+                                            required
+                                        >
+                                            <option value="low">Low</option>
+                                            <option value="medium">Medium</option>
+                                            <option value="high">High</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" className="btn btn-primary">Add Task</button>
+                                </form>
                             </div>
                         </div>
                     </div>
