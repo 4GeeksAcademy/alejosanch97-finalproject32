@@ -262,13 +262,13 @@ export const Profile = () => {
                         <div className="card-body">
                             <div className="row">
                                 <div className="col-md-4 text-center">
-                                    <img src="https://picsum.photos/200" className="rounded-circle img-thumbnail mb-3 profile-image" alt="Profile" />
+                                    <img src={store.user.avatar} className="rounded-circle img-thumbnail mb-3 profile-image" alt="Profile" />
                                     <h2 className="text-primary">{store.user.first_name} {store.user.last_name}</h2>
                                     <p className="text-muted">{store.user.email}</p>
                                     <p className="badge bg-info">Role: {store.user.role_id}</p>
                                     <p className="text-success">Organization: {store.user.organization_name || "Not specified"}</p>
                                     <button className="btn btn-primary py-0 mb-2 " onClick={() => handleEditUser(store.user)}>
-                                    Editar Perfil
+                                        Editar Perfil
                                     </button>
                                 </div>
                                 <div className="col-md-8">
