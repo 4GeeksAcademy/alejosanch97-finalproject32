@@ -265,6 +265,9 @@ export const Profile = () => {
                                     <p className="text-muted">{store.user.email}</p>
                                     <p className="badge bg-info">Role: {store.user.role_id}</p>
                                     <p className="text-success">Organization: {store.user.organization_name || "Not specified"}</p>
+                                    <button className="btn btn-primary py-0 mb-2 " onClick={() => handleEditUser(store.user)}>
+                                    Editar Perfil
+                                    </button>
                                 </div>
                                 <div className="col-md-8">
                                     <h3 className="text-secondary mb-4">User Profile</h3>
@@ -395,6 +398,66 @@ export const Profile = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+            <div className="card mt-4">
+                <div className="card-body">
+                    <h3 className="card-title">Mis Proyectos</h3>
+                    <ul className="list-group">
+                        {store.projects.map((project) => (
+                            <li key={project.id} className="list-group-item">
+                                {project.name} - {project.description}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </div>
+            <div className="card mt-4">
+                <div className="card-body">
+                    <h3 className="card-title">Usuarios de la Organización</h3>
+                    <table className="table">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Apellido</th>
+                                <th>Email</th>
+                                <th>Username</th>
+                                <th>Rol</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {store.organizationUsers && store.organizationUsers.map((user) => (
+                                <tr key={user.id}>
+                                    <td>{user.first_name}</td>
+                                    <td>{user.last_name}</td>
+                                    <td>{user.email}</td>
+                                    <td>{user.username}</td>
+                                    <td>{user.role_id}</td>
+                                    <td>
+                                        {(store.user.role_id === 1 || store.user.role_id === "1") && (
+                                            <button className="btn btn-primary btn-sm mx-2 px-3" onClick={() => handleEditUser(user)}>
+                                                Editar
+                                            </button>
+                                        )}
+
+                                        {(store.user.role_id === 1 || store.user.role_id === "1") && (
+                                            <button className="btn btn-danger btn-sm mx-2" onClick={() => handleDeleteUser(user.id)}>
+                                                Eliminar
+                                            </button>
+                                        )}
+
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div className="card mt-4">
+                <div className="card-body">
+                    <h3 className="card-title">Calendario de Tareas</h3>
+
                 </div>
             </div>
             {showCreateUser && (

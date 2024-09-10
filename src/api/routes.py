@@ -7,6 +7,7 @@ from api.utils import generate_sitemap, APIException, set_password
 from flask_cors import CORS
 from datetime import datetime, timezone, timedelta
 from sqlalchemy import func
+import cloudinary.uploader as uploader
 
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import check_password_hash
@@ -53,45 +54,63 @@ def handle_hello():
 #ruta para añadir un usuario
 @api.route('/user', methods=["POST"])
 def add_user():
-    body = request.json
-    user_data = body.get("user", {})
-    enterprise_data = body.get("enterprise", {})
+    data_form = request.form
+    data_files = request.files
+    user_data = {
+        "first_name": data_form.get("first_name"),
+        "last_name": data_form.get("last_name"),
+        "username": data_form.get("username"),
+        "avatar": data_files.get("avatar"),
+        "email": data_form.get("email"),
+        "password": data_form.get("password"),
+        "role_id": data_form.get("role_id"),
+        "name": data_form.get("name"),
+        "address": data_form.get("address"),
+    }
 
-    # Validación de campos requeridos
-    if not all([user_data.get("email"), user_data.get("password"), user_data.get("last_name")]):
+    print(user_data)
+    
+    if user_data.get("email", None) is None or user_data.get("password", None) is None or user_data.get("last_name", None) is None:
         return jsonify({"message": "Se requieren email, contraseña y apellido"}), 400
 
-    # Verificar si el usuario ya existe
+
+    # # Verificar si el usuario ya existe
     existing_user = Users.query.filter_by(email=user_data.get("email")).one_or_none()
     if existing_user:
         return jsonify({"message": "El usuario ya existe"}), 400
-
-    # Crear la empresa si no existe
-    enterprise = None
-    if enterprise_data:
-        enterprise = Enterprises.query.filter_by(name=enterprise_data.get("name")).first()
-        if not enterprise:
+    
+    # # Crear la empresa si no existe
+    enterprise = Enterprises.query.filter_by(name=user_data.get("name")).first()
+    if enterprise is None:
+        try:
             enterprise = Enterprises(
-                name=enterprise_data.get("name"),
-                address=enterprise_data.get("address")
+                name=user_data.get("name"),
+                address=user_data.get("address")
             )
             db.session.add(enterprise)
-            db.session.flush()  # Asigna un ID a la empresa
-
-    # Crear el nuevo usuario
+            db.session.commit()  # Asigna un ID a la empresa
+        except Exception as error:
+            print(error.args)
+   
     try:
         salt = b64encode(os.urandom(32)).decode("utf-8")
         hashed_password = set_password(user_data.get("password"), salt)
+    
+        #cloudinary
+        result_cloud = uploader.upload(user_data.get("avatar"))
 
         new_user = Users(
             role_id=user_data.get("role_id"),
             email=user_data.get("email"),
             username=user_data.get("username"),
+            
             password=hashed_password,
             first_name=user_data.get("first_name"),
             last_name=user_data.get("last_name"),
             enterprise_id=enterprise.id if enterprise else None,
-            salt=salt
+            salt=salt,
+            avatar = result_cloud.get("secure_url"),
+            avatar_public_id = result_cloud.get("public_id")
         )
 
         db.session.add(new_user)
@@ -112,7 +131,7 @@ def update_user(user_id):
     current_user = Users.query.get(current_user_id)
     
     # Verificar si el usuario actual es un administrador
-    if current_user.role_id != 1:
+    if current_user.role_id not in [1, 2]:
         return jsonify({"message": "No tienes permisos para realizar esta acción"}), 403
     
     user_to_update = Users.query.get(user_id)
@@ -126,8 +145,12 @@ def update_user(user_id):
     user_to_update.last_name = data.get('last_name', user_to_update.last_name)
     user_to_update.username = data.get('username', user_to_update.username)
     user_to_update.email = data.get('email', user_to_update.email)
-    user_to_update.role_id = data.get('role_id', user_to_update.role_id)
     
+    # Si el usuario actual tiene rol 1 (admin), permitir editar todos los campos
+    if current_user.role_id == 1:
+        user_to_update.role_id = data.get('role_id', user_to_update.role_id)
+           
+        
     # Si se proporciona una nueva contraseña, actualizarla
     if 'password' in data and data['password']:
         salt = b64encode(os.urandom(32)).decode("utf-8")
