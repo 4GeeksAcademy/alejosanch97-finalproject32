@@ -1,0 +1,72 @@
+.navbar {
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 15px 0;
+    position: relative;
+}
+
+.navbar-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.navbar-left {
+    display: flex;
+    align-items: center;
+    position: absolute;
+    left: 0cm; 
+}
+
+.navbar-logo {
+    margin-right: 1px;
+}
+
+.logo-image {
+    height: 50px; /* Aumenta el tamaño del logo */
+    width: auto;
+    max-width: none;
+}
+
+.navbar-links {
+    display: flex;
+    align-items: center;
+}
+
+.nav-link {
+    text-decoration: none;
+    color: #333;
+}
+
+.navbar-center {
+    flex-grow: 1;
+    min-width: 22cm; /* 30cm de espacio en blanco */
+}
+
+.navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px; 
+}
+
+.contact-sales-btn,
+.start-now-btn {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.contact-sales-btn {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.start-now-btn {
+    background-color: #007bff;
+    color: white;
+}

@@ -1,9 +1,10 @@
 import React, { useEffect, useContext, useState } from "react";
 import { Context } from "../store/appContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
+import "../../styles/profile.css";
 
 const localizer = momentLocalizer(moment);
 
@@ -12,6 +13,11 @@ export const Profile = () => {
     const navigate = useNavigate();
     const [showCreateUser, setShowCreateUser] = useState(false);
     const [showCreateProject, setShowCreateProject] = useState(false);
+    const [calendarEvents, setCalendarEvents] = useState([]);
+    const [filteredTasks, setFilteredTasks] = useState([]);
+    const [taskFilter, setTaskFilter] = useState("all");
+
+
     const [newUser, setNewUser] = useState({
         first_name: "",
         last_name: "",
@@ -29,12 +35,15 @@ export const Profile = () => {
         description: "",
         start_date: "",
         end_date: "",
+        priority: "medium",
         user_id: store.user ? store.user.id : null,
         enterprise_id: store.user ? store.user.enterprise_id : null
     });
 
     const [editingUser, setEditingUser] = useState(null);
     const [tasksWithProjects, setTasksWithProjects] = useState([]);
+
+
 
     const handleInputChange = (e) => {
         setNewUser({
@@ -106,9 +115,44 @@ export const Profile = () => {
             await actions.getProjects();
             const tasks = await actions.getAllTasksWithProjects();
             setTasksWithProjects(tasks);
+            setFilteredTasks(tasks);
+            updateCalendarEvents(tasks);
         };
         fetchData();
     }, [store.token]);
+
+    useEffect(() => {
+        if (store.tasksWithProjects) {
+            filterTasks(taskFilter);
+        }
+    }, [store.tasksWithProjects, taskFilter]);
+
+    const filterTasks = (status) => {
+        let filtered = store.tasksWithProjects;
+        if (status !== "all") {
+            filtered = filtered.filter(task => task.task_status.toLowerCase() === status.toLowerCase());
+        }
+        filtered.sort((a, b) => new Date(a.task_due_date) - new Date(b.task_due_date));
+        setFilteredTasks(filtered);
+        updateCalendarEvents(filtered);
+    };
+
+    useEffect(() => {
+        if (store.tasksWithProjects) {
+            updateCalendarEvents(store.tasksWithProjects);
+        }
+    }, [store.tasksWithProjects]);
+
+    const updateCalendarEvents = (tasks) => {
+        const events = tasks.map(task => ({
+            title: `${task.task_name} (${task.project_name})`,
+            start: new Date(task.task_due_date),
+            end: new Date(task.task_due_date),
+            allDay: true,
+            resource: task
+        }));
+        setCalendarEvents(events);
+    };
 
     const handleCreateUser = async (e) => {
         e.preventDefault();
@@ -158,14 +202,26 @@ export const Profile = () => {
 
     const handleCreateProject = async (e) => {
         e.preventDefault();
-        if (!newProject.name || !newProject.description || !newProject.start_date || !newProject.end_date) {
+        if (!newProject.name || !newProject.description || !newProject.start_date || !newProject.end_date || !newProject.priority) {
             alert("Todos los campos son requeridos");
             return;
         }
-        if (newProject.description.length > 5000) {  // Ajusta este número según tus necesidades
+        if (newProject.description.length > 5000) {
             alert("La descripción es demasiado larga. Por favor, acórtala.");
             return;
         }
+
+        const today = new Date().toISOString().split('T')[0];
+        if (newProject.start_date < today || newProject.end_date < today) {
+            alert("Las fechas de inicio y finalización no pueden ser anteriores a hoy.");
+            return;
+        }
+
+        if (newProject.end_date < newProject.start_date) {
+            alert("La fecha de finalización no puede ser anterior a la fecha de inicio.");
+            return;
+        }
+
         try {
             const projectToCreate = {
                 ...newProject,
@@ -181,6 +237,7 @@ export const Profile = () => {
                     description: "",
                     start_date: "",
                     end_date: "",
+                    priority: "medium",
                     user_id: store.user.id,
                     enterprise_id: store.user.enterprise_id
                 });
@@ -198,62 +255,148 @@ export const Profile = () => {
     }
 
     return (
-        <div className="container my-5">
-            <div className="card shadow-lg">
-                <div className="card-body">
-                    <div className="row">
-                        <div className="col-md-4 text-center d-flex flex-column align-items-center">
-                            <img src={store.user.avatar} className="rounded-circle img-thumbnail mb-3 col-8" alt="Imagen de perfil" />
-                            <h2 className="text-primary">{store.user.first_name} {store.user.last_name}</h2>
-                            <p className="text-muted">{store.user.email}</p>
-                            <p className="badge bg-info col-2">Rol: {store.user.role_id}</p>
-
-                            <button className="btn btn-primary py-0 mb-2 " onClick={() => handleEditUser(store.user)}>
-                                Editar Perfil
-                            </button>
-
-
-                            <p className="text-success">Organización: {store.user.organization_name || "No especificada"}</p>
-                        </div>
-                        <div className="col-md-8">
-                            <div className="d-flex justify-content-between align-items-center mb-4">
-                                <h3 className="text-secondary">Perfil de Usuario</h3>
-                                <div>
-                                    {(store.user.role_id === 1 || store.user.role_id === "1") && (
-                                        <button className="btn btn-outline-primary me-2" onClick={() => setShowCreateUser(!showCreateUser)}>
-                                            Crear Usuario
-                                        </button>
-                                    )}
-                                    <button className="btn btn-outline-success" onClick={() => setShowCreateProject(!showCreateProject)}>
-                                        Crear Proyecto
+        <div className="container-fluid profile-container">
+            <div className="row">
+                <div className="col-md-9">
+                    <div className="card shadow-lg mb-4">
+                        <div className="card-body">
+                            <div className="row">
+                                <div className="col-md-4 text-center">
+                                    <img src="https://picsum.photos/200" className="rounded-circle img-thumbnail mb-3 profile-image" alt="Profile" />
+                                    <h2 className="text-primary">{store.user.first_name} {store.user.last_name}</h2>
+                                    <p className="text-muted">{store.user.email}</p>
+                                    <p className="badge bg-info">Role: {store.user.role_id}</p>
+                                    <p className="text-success">Organization: {store.user.organization_name || "Not specified"}</p>
+                                    <button className="btn btn-primary py-0 mb-2 " onClick={() => handleEditUser(store.user)}>
+                                    Editar Perfil
                                     </button>
                                 </div>
-                            </div>
-                            <div className="form-check form-switch mb-4">
-                                <input type="checkbox" className="form-check-input" id="user-notifications" />
-                                <label htmlFor="user-notifications" className="form-check-label">
-                                    Notificaciones
-                                </label>
-                            </div>
-                            <div className="card bg-light">
-                                <div className="card-body">
-                                    <h4 className="card-title text-primary">Tareas Asignadas</h4>
-                                    {tasksWithProjects && tasksWithProjects.length > 0 ? (
-                                        tasksWithProjects.map(task => (
-                                            <div key={task.task_id} className="card mb-2">
-                                                <div className="card-body">
-                                                    <h5 className="card-title">{task.task_name}</h5>
-                                                    <h6 className="card-subtitle mb-2 text-muted">Proyecto: {task.project_name}</h6>
-                                                    <p className="card-text">{task.task_description}</p>
-                                                    <p className="card-text"><small className="text-muted">Estado: {task.task_status}</small></p>
-                                                    <p className="card-text"><small className="text-muted">Fecha de vencimiento: {new Date(task.task_due_date).toLocaleDateString()}</small></p>
-                                                </div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p>No hay tareas asignadas.</p>
-                                    )}
+                                <div className="col-md-8">
+                                    <h3 className="text-secondary mb-4">User Profile</h3>
+                                    <div className="form-check form-switch mb-4">
+                                        <input type="checkbox" className="form-check-input" id="user-notifications" />
+                                        <label htmlFor="user-notifications" className="form-check-label">Notifications</label>
+                                    </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="card mb-4">
+                        <div className="card-body">
+                            <h4 className="card-title text-primary">Assigned Tasks</h4>
+                            <div className="mb-3">
+                                <select
+                                    className="form-select"
+                                    value={taskFilter}
+                                    onChange={(e) => setTaskFilter(e.target.value)}
+                                >
+                                    <option value="all">All</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="In Progress">In Progress</option>
+                                    <option value="Completed">Completed</option>
+                                </select>
+                            </div>
+                            {filteredTasks && filteredTasks.length > 0 ? (
+                                filteredTasks.map(task => (
+                                    <div key={task.task_id} className="card mb-2">
+                                        <div className="card-body">
+                                            <h5 className="card-title">{task.task_name}</h5>
+                                            <h6 className="card-subtitle mb-2 text-muted">Project: {task.project_name}</h6>
+                                            <p className="card-text">{task.task_description}</p>
+                                            <p className="card-text"><small className="text-muted">Status: {task.task_status}</small></p>
+                                            <p className="card-text"><small className="text-muted">Due date: {new Date(task.task_due_date).toLocaleDateString()}</small></p>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <p>No tasks assigned for this filter.</p>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="card mb-4">
+                        <div className="card-body">
+                            <h4 className="card-title">My Projects</h4>
+                            <ul className="list-group">
+                                {store.projects.map((project) => (
+                                    <li key={project.id} className="list-group-item">
+                                        {project.name} - {project.description}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div className="card mb-4">
+                        <div className="card-body">
+                            <h4 className="card-title">Organization Users</h4>
+                            <table className="table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Last Name</th>
+                                        <th>Email</th>
+                                        <th>Username</th>
+                                        <th>Role</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {store.organizationUsers && store.organizationUsers.map((user) => (
+                                        <tr key={user.id}>
+                                            <td>{user.first_name}</td>
+                                            <td>{user.last_name}</td>
+                                            <td>{user.email}</td>
+                                            <td>{user.username}</td>
+                                            <td>{user.role_id}</td>
+                                            <td>
+                                                <button className="btn btn-primary btn-sm me-2" onClick={() => handleEditUser(user)}>
+                                                    Edit
+                                                </button>
+                                                <button className="btn btn-danger btn-sm" onClick={() => handleDeleteUser(user.id)}>
+                                                    Delete
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div className="card mb-4">
+                        <div className="card-body">
+                            <h4 className="card-title">Task Calendar</h4>
+                            <div className="calendar-container">
+                                <Calendar
+                                    localizer={localizer}
+                                    events={calendarEvents}
+                                    startAccessor="start"
+                                    endAccessor="end"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="col-md-3">
+                    <div className="card shadow-lg side-menu">
+                        <div className="card-body">
+                            <h4 className="card-title">Quick Actions</h4>
+                            <div className="d-grid gap-2">
+                                {(store.user.role_id === 1 || store.user.role_id === "1") && (
+                                    <>
+                                        <button className="btn btn-primary" onClick={() => setShowCreateUser(!showCreateUser)}>
+                                            Create User
+                                        </button>
+                                        <Link className="btn btn-warning" to="/taskmanager">Graph Managment</Link>
+                                    </>
+                                )}
+                                <button className="btn btn-success" onClick={() => setShowCreateProject(!showCreateProject)}>
+                                    Create Project
+                                </button>
+                                <Link className="btn btn-info" to="/projectmanager">Project Manager</Link>
                             </div>
                         </div>
                     </div>
@@ -320,178 +463,105 @@ export const Profile = () => {
                 </div>
             </div>
             {showCreateUser && (
-                <div className="mt-4">
-                    <h3>Crear Nuevo Usuario</h3>
-                    <form onSubmit={handleCreateUser} className="d-flex flex-column gap-3 border p-3 rounded">
-                        <div className="mb-3">
-                            <label htmlFor="first_name" className="form-label">Nombre</label>
-                            <input
-                                type="text"
-                                name="first_name"
-                                id="first_name"
-                                placeholder="Nombre"
-                                value={newUser.first_name}
-                                className="form-control"
-                                onChange={handleInputChange}
-                                required
-                            />
-                        </div>
-                        <div className="mb-3">
-                            <label htmlFor="last_name" className="form-label">Apellido</label>
-                            <input
-                                type="text"
-                                name="last_name"
-                                id="last_name"
-                                placeholder="Apellido"
-                                value={newUser.last_name}
-                                className="form-control"
-                                onChange={handleInputChange}
-                                required
-                            />
-                        </div>
-                        <div className="mb-3">
-                            <label htmlFor="username" className="form-label">Nombre de usuario</label>
-                            <input
-                                type="text"
-                                name="username"
-                                id="username"
-                                placeholder="Nombre de usuario"
-                                value={newUser.username}
-                                className="form-control"
-                                onChange={handleInputChange}
-                                required
-                            />
-                        </div>
-
-                        <div className="mb-3">
-                            <label htmlFor="email" className="form-label">Email</label>
-                            <input
-                                type="email"
-                                name="email"
-                                id="email"
-                                placeholder="Email"
-                                value={newUser.email}
-                                className="form-control"
-                                onChange={handleInputChange}
-                                required
-                            />
-                        </div>
-                        <div className="mb-3">
-                            <label htmlFor="password" className="form-label">Contraseña</label>
-                            <input
-                                type="password"
-                                name="password"
-                                id="password"
-                                placeholder="Contraseña"
-                                value={newUser.password}
-                                className="form-control"
-                                onChange={handleInputChange}
-                                required
-                            />
-                        </div>
-                        <button type="submit" className="btn btn-primary">Crear Usuario</button>
-                    </form>
-                </div>
-            )}
-            {showCreateProject && (
-                <div className="mt-4">
-                    <h3>Crear Nuevo Proyecto</h3>
-                    <form onSubmit={handleCreateProject} className="d-flex flex-column gap-3 border p-3 rounded">
-                        <div className="mb-3">
-                            <label htmlFor="name" className="form-label">Nombre del Proyecto</label>
-                            <input
-                                type="text"
-                                name="name"
-                                id="name"
-                                placeholder="Nombre del Proyecto"
-                                value={newProject.name}
-                                className="form-control"
-                                onChange={handleProjectInputChange}
-                                required
-                            />
-                        </div>
-                        <div className="mb-3">
-                            <label htmlFor="description" className="form-label">Descripción</label>
-                            <textarea
-                                name="description"
-                                id="description"
-                                placeholder="Descripción del Proyecto"
-                                value={newProject.description}
-                                className="form-control"
-                                onChange={handleProjectInputChange}
-                                required
-                            />
-                        </div>
-                        <div className="mb-3">
-                            <label htmlFor="description" className="form-label">Fecha de Inicio</label>
-                            <input
-                                type="date"
-                                name="start_date"
-                                id="start_date"
-                                value={newProject.start_date}
-                                className="form-control"
-                                onChange={handleProjectInputChange}
-                                required
-                            />
-                        </div>
-                        <div className="mb-3">
-                            <label htmlFor="end_date" className="form-label">Fecha de Finalización</label>
-                            <input
-                                type="date"
-                                name="end_date"
-                                id="end_date"
-                                value={newProject.end_date}
-                                className="form-control"
-                                onChange={handleProjectInputChange}
-                                required
-                            />
-                        </div>
-                        <button type="submit" className="btn btn-primary">Crear Proyecto</button>
-                    </form>
-                </div>
-            )}
-            {editingUser && (
-                <div className="modal" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                <div className="modal show">
                     <div className="modal-dialog">
                         <div className="modal-content">
                             <div className="modal-header">
-                                <h5 className="modal-title">Editar Usuario</h5>
+                                <h5 className="modal-title">Create New User</h5>
+                                <button type="button" className="btn-close" onClick={() => setShowCreateUser(false)}></button>
+                            </div>
+                            <div className="modal-body">
+                                <form onSubmit={handleCreateUser}>
+                                    <div className="mb-3">
+                                        <label htmlFor="first_name" className="form-label">First Name</label>
+                                        <input type="text" className="form-control" id="first_name" name="first_name" value={newUser.first_name} onChange={handleInputChange} required />
+                                    </div>
+                                    <div className="mb-3">
+                                        <label htmlFor="last_name" className="form-label">Last Name</label>
+                                        <input type="text" className="form-control" id="last_name" name="last_name" value={newUser.last_name} onChange={handleInputChange} required />
+                                    </div>
+                                    <div className="mb-3">
+                                        <label htmlFor="username" className="form-label">Username</label>
+                                        <input type="text" className="form-control" id="username" name="username" value={newUser.username} onChange={handleInputChange} required />
+                                    </div>
+                                    <div className="mb-3">
+                                        <label htmlFor="email" className="form-label">Email</label>
+                                        <input type="email" className="form-control" id="email" name="email" value={newUser.email} onChange={handleInputChange} required />
+                                    </div>
+                                    <div className="mb-3">
+                                        <label htmlFor="password" className="form-label">Password</label>
+                                        <input type="password" className="form-control" id="password" name="password" value={newUser.password} onChange={handleInputChange} required />
+                                    </div>
+                                    <button type="submit" className="btn btn-primary">Create User</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showCreateProject && (
+                <div className="modal show">
+                    <div className="modal-dialog">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">Create New Project</h5>
+                                <button type="button" className="btn-close" onClick={() => setShowCreateProject(false)}></button>
+                            </div>
+                            <div className="modal-body">
+                                <form onSubmit={handleCreateProject}>
+                                    <div className="mb-3">
+                                        <label htmlFor="name" className="form-label">Project Name</label>
+                                        <input type="text" className="form-control" id="name" name="name" value={newProject.name} onChange={handleProjectInputChange} required />
+                                    </div>
+                                    <div className="mb-3">
+                                        <label htmlFor="description" className="form-label">Description</label>
+                                        <textarea className="form-control" id="description" name="description" value={newProject.description} onChange={handleProjectInputChange} required></textarea>
+                                    </div>
+                                    <div className="mb-3">
+                                        <label htmlFor="start_date" className="form-label">Start Date</label>
+                                        <input type="date" className="form-control" id="start_date" name="start_date" value={newProject.start_date} onChange={handleProjectInputChange} required />
+                                    </div>
+                                    <div className="mb-3">
+                                        <label htmlFor="end_date" className="form-label">End Date</label>
+                                        <input type="date" className="form-control" id="end_date" name="end_date" value={newProject.end_date} onChange={handleProjectInputChange} required />
+                                    </div>
+                                    <div className="mb-3">
+                                        <label htmlFor="priority" className="form-label">Priority</label>
+                                        <select className="form-select" id="priority" name="priority" value={newProject.priority} onChange={handleProjectInputChange} required>
+                                            <option value="low">Low</option>
+                                            <option value="medium">Medium</option>
+                                            <option value="high">High</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" className="btn btn-primary">Create Project</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {editingUser && (
+                <div className="modal show">
+                    <div className="modal-dialog">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">Edit User</h5>
                                 <button type="button" className="btn-close" onClick={() => setEditingUser(null)}></button>
                             </div>
                             <div className="modal-body">
                                 <form onSubmit={handleUpdateUser}>
                                     <div className="mb-3">
-                                        <label htmlFor="edit_first_name" className="form-label">Nombre</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            id="edit_first_name"
-                                            name="first_name"
-                                            value={editingUser.first_name}
-                                            onChange={handleEditInputChange}
-                                        />
+                                        <label htmlFor="edit_first_name" className="form-label">First Name</label>
+                                        <input type="text" className="form-control" id="edit_first_name" name="first_name" value={editingUser.first_name} onChange={handleEditInputChange} required />
                                     </div>
                                     <div className="mb-3">
-                                        <label htmlFor="edit_last_name" className="form-label">Apellido</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            id="edit_last_name"
-                                            name="last_name"
-                                            value={editingUser.last_name}
-                                            onChange={handleEditInputChange}
-                                        />
+                                        <label htmlFor="edit_last_name" className="form-label">Last Name</label>
+                                        <input type="text" className="form-control" id="edit_last_name" name="last_name" value={editingUser.last_name} onChange={handleEditInputChange} required />
                                     </div>
                                     <div className="mb-3">
-                                        <label htmlFor="edit_username" className="form-label">Nombre de usuario</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            id="edit_username"
-                                            name="username"
-                                            value={editingUser.username}
-                                            onChange={handleEditInputChange}
-                                        />
+                                        <label htmlFor="edit_username" className="form-label">Username</label>
+                                        <input type="text" className="form-control" id="edit_username" name="username" value={editingUser.username} onChange={handleEditInputChange} required />
                                     </div>
                                     <div className="mb-3 d-flex flex-column">
                                         <label htmlFor="avatar" className="form-label">Imagen de perfile</label>
@@ -510,40 +580,20 @@ export const Profile = () => {
                                     </div>
                                     <div className="mb-3">
                                         <label htmlFor="edit_email" className="form-label">Email</label>
-                                        <input
-                                            type="email"
-                                            className="form-control"
-                                            id="edit_email"
-                                            name="email"
-                                            value={editingUser.email}
-                                            onChange={handleEditInputChange}
-                                        />
+                                        <input type="email" className="form-control" id="edit_email" name="email" value={editingUser.email} onChange={handleEditInputChange} required />
                                     </div>
                                     <div className="mb-3">
-                                        <label htmlFor="edit_password" className="form-label">Contraseña (dejar en blanco si no se cambia)</label>
-                                        <input
-                                            type="password"
-                                            className="form-control"
-                                            id="edit_password"
-                                            name="password"
-                                            value={editingUser.password || ''}
-                                            onChange={handleEditInputChange}
-                                        />
-                                    </div>
-                                    <div className="mb-3">
-                                        <label htmlFor="edit_role_id" className="form-label">Rol</label>
-                                        <select
-                                            className="form-control"
-                                            id="edit_role_id"
-                                            name="role_id"
-                                            value={editingUser.role_id}
-                                            onChange={handleEditInputChange}
-                                        >
-                                            <option value="1">Administrador</option>
-                                            <option value="2">Usuario</option>
+                                        <label htmlFor="edit_role_id" className="form-label">Role</label>
+                                        <select className="form-select" id="edit_role_id" name="role_id" value={editingUser.role_id} onChange={handleEditInputChange} required>
+                                            <option value="1">Admin</option>
+                                            <option value="2">User</option>
                                         </select>
                                     </div>
-                                    <button type="submit" className="btn btn-primary">Actualizar</button>
+                                    <div className="mb-3">
+                                        <label htmlFor="edit_password" className="form-label">Password (leave blank to keep current)</label>
+                                        <input type="password" className="form-control" id="edit_password" name="password" value={editingUser.password || ''} onChange={handleEditInputChange} />
+                                    </div>
+                                    <button type="submit" className="btn btn-primary">Update User</button>
                                 </form>
                             </div>
                         </div>

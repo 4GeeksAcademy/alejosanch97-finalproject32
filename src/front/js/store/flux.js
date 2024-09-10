@@ -22,9 +22,16 @@ const getState = ({ getStore, getActions, setStore }) => {
 			projectMembers: {},
 			projectProgress: [],
      		taskCompletionRate: [],
-      		taskDistribution: {},
-      		userProductivity: [],
-      		ganttData: []
+			taskStatusDistribution: [],
+			taskDistribution: {},
+			userProductivity: [],
+			averageTaskDuration: [],
+			tasksWithProjects: [],
+			projectComments: {},
+			taskComments: {},
+			userTaskStatusDistribution: {},
+			projectCompletionTime: [],
+
 			
 		},
 		actions: {
@@ -124,7 +131,7 @@ const getState = ({ getStore, getActions, setStore }) => {
                             user: data
                         });
                         localStorage.setItem("user", JSON.stringify(data));
-                        await getActions().getUserTasks();
+                        
                     } else {
                         throw new Error("Failed to fetch user data");
                     }
@@ -186,41 +193,62 @@ const getState = ({ getStore, getActions, setStore }) => {
             },
 
 			createProject: async (projectData) => {
-				const store = getStore();
-				try {
-					const response = await fetch(`${process.env.BACKEND_URL}/api/projects`, {
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							"Authorization": `Bearer ${store.token}`
-						},
-						body: JSON.stringify(projectData)
-					});
-					const data = await response.json();
-					if (response.status === 201) {
-						setStore({ 
-							projects: [...store.projects, data]
-						});
-						return { success: true, message: "Proyecto creado con éxito", project: data };
-					} else {
-						return { success: false, message: data.message || "Error al crear el proyecto" };
-					}
-				} catch (error) {
-					console.error("Error al crear el proyecto:", error);
-					return { success: false, message: "Error en la conexión" };
-				}
-			},
+                const store = getStore();
+                try {
+                    // Validar las fechas antes de enviar al backend
+                    const today = new Date().toISOString().split('T')[0];
+                    if (projectData.start_date < today || projectData.end_date < today) {
+                        throw new Error('Las fechas de inicio y finalización no pueden ser anteriores a hoy.');
+                    }
+                    if (projectData.end_date < projectData.start_date) {
+                        throw new Error('La fecha de finalización no puede ser anterior a la fecha de inicio.');
+                    }
+
+                    const response = await fetch(`${process.env.BACKEND_URL}/api/projects`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${store.token}`
+                        },
+                        body: JSON.stringify({...projectData, priority: projectData.priority || 'medium'})
+                    });
+                    const data = await response.json();
+                    if (response.status === 201) {
+                        setStore({ 
+                            projects: [...store.projects, data]
+                        });
+                        return { success: true, message: "Proyecto creado con éxito", project: data };
+                    } else {
+                        return { success: false, message: data.message || "Error al crear el proyecto" };
+                    }
+                } catch (error) {
+                    console.error("Error al crear el proyecto:", error);
+                    return { success: false, message: error.message };
+                }
+            },
 
 			updateProject: async (projectId, projectData) => {
 				const store = getStore();
 				try {
+					// Validar las fechas antes de enviar al backend
+					const today = new Date().toISOString().split('T')[0];
+					if (projectData.start_date < today) {
+						throw new Error('La fecha de inicio no puede ser anterior a hoy.');
+					}
+					if (projectData.end_date < today) {
+						throw new Error('La fecha de finalización no puede ser anterior a hoy.');
+					}
+					if (projectData.end_date < projectData.start_date) {
+						throw new Error('La fecha de finalización no puede ser anterior a la fecha de inicio.');
+					}
+			
 					const response = await fetch(`${process.env.BACKEND_URL}/api/project/${projectId}`, {
 						method: 'PUT',
 						headers: {
 							'Content-Type': 'application/json',
 							'Authorization': `Bearer ${store.token}`
 						},
-						body: JSON.stringify(projectData)
+						body: JSON.stringify({...projectData, priority: projectData.priority || 'medium'})
 					});
 			
 					if (!response.ok) {
@@ -317,13 +345,19 @@ const getState = ({ getStore, getActions, setStore }) => {
 			addProjectTask: async (projectId, taskData) => {
 				const store = getStore();
 				try {
+					// Validar la fecha antes de enviar al backend
+					const today = new Date().toISOString().split('T')[0];
+					if (taskData.due_date < today) {
+						throw new Error('La fecha de vencimiento no puede ser anterior a hoy');
+					}
+			
 					const response = await fetch(`${process.env.BACKEND_URL}/api/project/${projectId}/tasks`, {
 						method: 'POST',
 						headers: {
 							'Content-Type': 'application/json',
 							'Authorization': `Bearer ${store.token}`
 						},
-						body: JSON.stringify(taskData)
+						body: JSON.stringify({...taskData, priority: taskData.priority || 'medium'})
 					});
 			
 					if (!response.ok) {
@@ -336,10 +370,13 @@ const getState = ({ getStore, getActions, setStore }) => {
 						projectTasks: { ...store.projectTasks, [projectId]: updatedTasks }
 					});
 			
+					// Actualizar tasksWithProjects
+					getActions().getAllTasksWithProjects();
+			
 					return newTask;
 				} catch (error) {
 					console.error('Error adding project task:', error);
-					return null;
+					throw error; // Propagar el error para manejarlo en el componente
 				}
 			},
 
@@ -402,14 +439,21 @@ const getState = ({ getStore, getActions, setStore }) => {
 
 			updateTask: async (taskId, taskData) => {
 				const store = getStore();
+				const actions = getActions();
 				try {
+					// Validar la fecha antes de enviar al backend
+					const today = new Date().toISOString().split('T')[0];
+					if (taskData.due_date && taskData.due_date < today) {
+						throw new Error('La fecha de vencimiento no puede ser anterior a hoy');
+					}
+			
 					const response = await fetch(`${process.env.BACKEND_URL}/api/task/${taskId}`, {
 						method: 'PUT',
 						headers: {
 							'Content-Type': 'application/json',
 							'Authorization': `Bearer ${store.token}`
 						},
-						body: JSON.stringify(taskData)
+						body: JSON.stringify({...taskData, priority: taskData.priority || 'medium'})
 					});
 			
 					if (!response.ok) {
@@ -417,11 +461,40 @@ const getState = ({ getStore, getActions, setStore }) => {
 					}
 			
 					const updatedTask = await response.json();
+			
+					// Actualizar la tarea en el estado
+					setStore(store => {
+						const updatedProjectTasks = { ...store.projectTasks };
+						const projectId = updatedTask.project_id;
+						if (updatedProjectTasks[projectId]) {
+							updatedProjectTasks[projectId] = updatedProjectTasks[projectId].map(task => 
+								task.id === updatedTask.id ? updatedTask : task
+							);
+						}
+						return { projectTasks: updatedProjectTasks };
+					});
+			
+					// Actualizar los datos del dashboard
+					await actions.getTasksByStatus();
+					await actions.getStatusChangesByUser();
+					await actions.getProjectCompletionTime();
+			
 					return updatedTask;
 				} catch (error) {
 					console.error('Error updating task:', error);
-					return null;
+					throw error; // Propagar el error para manejarlo en el componente
 				}
+			},
+
+			setProjectTasks: (projectId, tasks) => {
+				const store = getStore();
+				setStore({
+					...store,
+					projectTasks: {
+						...store.projectTasks,
+						[projectId]: tasks
+					}
+				});
 			},
 
 			deleteTask: async (taskId) => {
@@ -442,6 +515,117 @@ const getState = ({ getStore, getActions, setStore }) => {
 				} catch (error) {
 					console.error('Error deleting task:', error);
 					return false;
+				}
+			},
+
+			addProjectComment: async (projectId, content) => {
+				const store = getStore();
+				try {
+					const response = await fetch(`${process.env.BACKEND_URL}/api/project/${projectId}/comments`, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'Authorization': `Bearer ${store.token}`
+						},
+						body: JSON.stringify({ content })
+					});
+
+					if (!response.ok) {
+						throw new Error('Failed to add project comment');
+					}
+
+					const newComment = await response.json();
+					const updatedComments = [...(store.projectComments[projectId] || []), newComment];
+					setStore({ 
+						projectComments: { ...store.projectComments, [projectId]: updatedComments }
+					});
+
+					return newComment;
+				} catch (error) {
+					console.error('Error adding project comment:', error);
+					throw error;
+				}
+			},
+
+			getProjectComments: async (projectId) => {
+				const store = getStore();
+				try {
+					const response = await fetch(`${process.env.BACKEND_URL}/api/project/${projectId}/comments`, {
+						method: 'GET',
+						headers: {
+							'Authorization': `Bearer ${store.token}`
+						}
+					});
+
+					if (!response.ok) {
+						throw new Error('Failed to fetch project comments');
+					}
+
+					const comments = await response.json();
+					setStore({ 
+						projectComments: { ...store.projectComments, [projectId]: comments }
+					});
+
+					return comments;
+				} catch (error) {
+					console.error('Error fetching project comments:', error);
+					return [];
+				}
+			},
+
+			// Nuevas acciones para comentarios de tareas
+			addTaskComment: async (taskId, content) => {
+				const store = getStore();
+				try {
+					const response = await fetch(`${process.env.BACKEND_URL}/api/task/${taskId}/comments`, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'Authorization': `Bearer ${store.token}`
+						},
+						body: JSON.stringify({ content })
+					});
+
+					if (!response.ok) {
+						throw new Error('Failed to add task comment');
+					}
+
+					const newComment = await response.json();
+					const updatedComments = [...(store.taskComments[taskId] || []), newComment];
+					setStore({ 
+						taskComments: { ...store.taskComments, [taskId]: updatedComments }
+					});
+
+					return newComment;
+				} catch (error) {
+					console.error('Error adding task comment:', error);
+					throw error;
+				}
+			},
+
+			getTaskComments: async (taskId) => {
+				const store = getStore();
+				try {
+					const response = await fetch(`${process.env.BACKEND_URL}/api/task/${taskId}/comments`, {
+						method: 'GET',
+						headers: {
+							'Authorization': `Bearer ${store.token}`
+						}
+					});
+
+					if (!response.ok) {
+						throw new Error('Failed to fetch task comments');
+					}
+
+					const comments = await response.json();
+					setStore({ 
+						taskComments: { ...store.taskComments, [taskId]: comments }
+					});
+
+					return comments;
+				} catch (error) {
+					console.error('Error fetching task comments:', error);
+					return [];
 				}
 			},
 
@@ -507,6 +691,93 @@ const getState = ({ getStore, getActions, setStore }) => {
             },
 
 			// dashboard
+
+			getTasksByStatus: async () => {
+				const store = getStore();
+				try {
+				  const response = await fetch(`${process.env.BACKEND_URL}/api/dashboard/tasks-by-status`, {
+					method: 'GET',
+					headers: {
+					  'Authorization': `Bearer ${store.token}`
+					}
+				  });
+			  
+				  if (!response.ok) {
+					throw new Error('Failed to fetch tasks by status');
+				  }
+			  
+				  const taskStatusData = await response.json();
+			  
+				  // Mapear los estados a nombres legibles
+				  const STATUS_NAMES = {
+					0: 'Completed',
+					1: 'In Progress',
+					2: 'Pending'
+				  };
+			  
+				  const taskStatusDistribution = taskStatusData.map(item => ({
+					...item,
+					name: STATUS_NAMES[item.status] || `Status ${item.status}`,
+					value: item.count // Asegúrate de que 'value' esté definido para Recharts
+				  }));
+			  
+				  setStore({ taskStatusDistribution: taskStatusDistribution });
+			  
+				  return taskStatusDistribution;
+				} catch (error) {
+				  console.error('Error fetching tasks by status:', error);
+				  return [];
+				}
+			  },
+			
+			getStatusChangesByUser: async () => {
+				const store = getStore();
+				try {
+					const response = await fetch(`${process.env.BACKEND_URL}/api/dashboard/status-changes-by-user`, {
+						method: 'GET',
+						headers: {
+							'Authorization': `Bearer ${store.token}`
+						}
+					});
+			
+					if (!response.ok) {
+						throw new Error('Failed to fetch status changes by user');
+					}
+			
+					const userProductivity = await response.json();
+					setStore({ userProductivity: userProductivity });
+			
+					return userProductivity;
+				} catch (error) {
+					console.error('Error fetching status changes by user:', error);
+					return [];
+				}
+			},
+			
+			getProjectCompletionTime: async () => {
+				const store = getStore();
+				try {
+					const response = await fetch(`${process.env.BACKEND_URL}/api/dashboard/project-completion-time`, {
+						method: 'GET',
+						headers: {
+							'Authorization': `Bearer ${store.token}`
+						}
+					});
+			
+					if (!response.ok) {
+						throw new Error('Failed to fetch project completion time');
+					}
+			
+					const projectCompletionTime = await response.json();
+					setStore({ projectCompletionTime: projectCompletionTime });
+			
+					return projectCompletionTime;
+				} catch (error) {
+					console.error('Error fetching project completion time:', error);
+					return [];
+				}
+			},
+
 			getProjectProgress: async () => {
 				const store = getStore();
 				try {
@@ -519,58 +790,6 @@ const getState = ({ getStore, getActions, setStore }) => {
 				  console.error("Error fetching project progress", error);
 				}
 			  },
-		
-			  getTaskCompletionRate: async () => {
-				const store = getStore();
-				try {
-				  const resp = await fetch(`${process.env.BACKEND_URL}/api/dashboard/task-completion-rate`, {
-					headers: { "Authorization": `Bearer ${store.token}` }
-				  });
-				  const data = await resp.json();
-				  setStore({ taskCompletionRate: data });
-				} catch (error) {
-				  console.error("Error fetching task completion rate", error);
-				}
-			  },
-		
-			  getTaskDistribution: async () => {
-				const store = getStore();
-				try {
-				  const resp = await fetch(`${process.env.BACKEND_URL}/api/dashboard/task-distribution`, {
-					headers: { "Authorization": `Bearer ${store.token}` }
-				  });
-				  const data = await resp.json();
-				  setStore({ taskDistribution: data });
-				} catch (error) {
-				  console.error("Error fetching task distribution", error);
-				}
-			  },
-		
-			  getUserProductivity: async () => {
-				const store = getStore();
-				try {
-				  const resp = await fetch(`${process.env.BACKEND_URL}/api/dashboard/user-productivity`, {
-					headers: { "Authorization": `Bearer ${store.token}` }
-				  });
-				  const data = await resp.json();
-				  setStore({ userProductivity: data });
-				} catch (error) {
-				  console.error("Error fetching user productivity", error);
-				}
-			  },
-
-			  getGanttData: async () => {
-				const store = getStore();
-				try {
-				  const resp = await fetch(`${process.env.BACKEND_URL}/api/dashboard/gantt-data`, {
-					headers: { "Authorization": `Bearer ${store.token}` }
-				  });
-				  const data = await resp.json();
-				  setStore({ ganttData: data });
-				} catch (error) {
-				  console.error("Error fetching Gantt data", error);
-				}
-			  }
 		}
 	};
 };
