@@ -1,7 +1,258 @@
-/*
-    home.css: This website contains selectors only used in home.css
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 
-    All pages share the styles on index.css but you should create 
-    one more css for each page that will contain the selected used 
-    on that page only (the ones not reused in other pages).
-*/
+:root {
+  --primary-color: #6264A7;
+  --secondary-color: #F3F4F6;
+  --accent-color: #FF6B6B;
+  --text-color: #333333;
+  --background-color: #FFFFFF;
+  --feature-color-1: #FFD700;
+  --feature-color-2: #98FB98;
+  --feature-color-3: #87CEFA;
+  --feature-color-4: #FFA07A;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  line-height: 1.6;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  margin: 0;
+  padding: 0;
+}
+
+.home-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+}
+
+.header h1 {
+  color: var(--primary-color);
+  font-size: 2rem;
+}
+
+nav a {
+  color: var(--text-color);
+  text-decoration: none;
+  margin-left: 20px;
+  font-weight: 600;
+}
+
+.hero {
+  background-size: cover;
+  background-position: center;
+  color: var(--background-color);
+  text-align: center;
+  padding: 100px 0;
+  margin-bottom: 50px;
+}
+
+.hero h2 {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+}
+
+.cta-button {
+  background-color: var(--accent-color);
+  color: var(--background-color);
+  border: none;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.cta-button:hover {
+  background-color: #FF4F4F;
+}
+
+.features, .about, .contact {
+  margin-bottom: 50px;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+}
+
+.feature-item {
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.feature-item:nth-child(1) {
+  background-color: var(--feature-color-1);
+}
+
+.feature-item:nth-child(2) {
+  background-color: var(--feature-color-2);
+}
+
+.feature-item:nth-child(3) {
+  background-color: var(--feature-color-3);
+}
+
+.feature-item:nth-child(4) {
+  background-color: var(--feature-color-4);
+}
+
+.feature-item i {
+  font-size: 2rem;
+  color: var(--primary-color);
+  margin-bottom: 15px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+input, textarea {
+  margin-bottom: 15px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+footer {
+  text-align: center;
+  padding: 20px 0;
+  background-color: var(--secondary-color);
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+  }
+  
+  nav {
+    margin-top: 20px;
+  }
+  
+  nav a {
+    margin: 0 10px;
+  }
+}
+
+.team-work {
+  text-align: center;
+  margin: 50px 0;
+  background-color: #000000;
+  color: #FFFFFF;
+  padding: 50px 0;
+}
+
+.icon-grid {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 30px;
+}
+
+.icon-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.icon-item i {
+  font-size: 3rem;
+  color: #FFFFFF;
+  margin-bottom: 10px;
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 50px 0;
+  background-color: #f3f4f6;
+}
+
+.hero-content {
+  flex: 1;
+  padding-right: 40px;
+}
+
+.hero h1 {
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 20px;
+  line-height: 1.2;
+}
+
+.hero p {
+  font-size: 1.2rem;
+  color: #666;
+  margin-bottom: 30px;
+  max-width: 600px;
+}
+
+.cta-button {
+  background-color: #6264A7;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.cta-button:hover {
+  background-color: #5254A7;
+}
+
+.hero-info {
+  margin-top: 20px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.hero-info span:nth-child(2) {
+  margin: 0 10px;
+}
+
+.hero-image {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.hero-image img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+  .hero {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .hero-content {
+    padding-right: 0;
+    margin-bottom: 30px;
+  }
+
+  .hero-image {
+    justify-content: center;
+  }
+}

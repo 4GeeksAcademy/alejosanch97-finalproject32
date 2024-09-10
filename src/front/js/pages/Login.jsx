@@ -2,6 +2,7 @@ import React, { useState, useContext } from "react";
 import { Link } from "react-router-dom"
 import { Context } from "../store/appContext"
 import { Navigate } from "react-router-dom"
+import "../../styles/login.css";
 
 const initialState = {
     email: "",
@@ -39,52 +40,61 @@ export const Login = () => {
     }
 
     return (
-        <div className="w-50 mx-auto">
-            {
-                isLoged ? <Navigate to="/profile" /> :
-                    <form onSubmit={handleSubmit} className="d-flex flex-column gap-3 border p-3 rounded">
-                        <h2 className="text-center mt-3">Iniciar sesion</h2>
-                        <div className="mb-3">
-                            <label htmlFor="user_email" className="form-label">Email</label>
-                            <input
-                                type="email"
-                                name="email"
-                                id="user_email"
-                                placeholder="Email"
-                                value={user.email}
-                                className="form-control"
-                                onChange={handleChange}
-                            />
+        <div className="login-container">
+            <div className="login-card">
+                <div className="branding-section">
+                    <img src="https://i.imgur.com/Nkysfkd.jpeg" alt="Tasky Logo" className="logo" />
+                    <h2 className="welcome-text">Bienvenido a Tasky</h2>
+                    <p className="description">Organiza tus tareas de manera eficiente y mejora tu productividad.</p>
+                    <img src="https://i.pinimg.com/564x/75/65/f9/7565f983496a88a43ba7cfaaaf7ccf81.jpg" alt="Productivity" className="productivity-image" />
+                </div>
+                <div className="form-section">
+                    <h2 className="form-title">Iniciar sesión</h2>
+                    {isLoged ? (
+                        <Navigate to="/profile" />
+                    ) : (
+                        <form onSubmit={handleSubmit}>
+                            <div className="mb-3">
+                                <label htmlFor="user_email" className="form-label">Email</label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    id="user_email"
+                                    placeholder="Email"
+                                    value={user.email}
+                                    onChange={handleChange}
+                                    className="form-control"
+                                />
+                            </div>
+                            <div className="mb-3">
+                                <label htmlFor="user_password" className="form-label">Contraseña</label>
+                                <input
+                                    type="password"
+                                    name="password"
+                                    id="user_password"
+                                    placeholder="Contraseña"
+                                    value={user.password}
+                                    onChange={handleChange}
+                                    className="form-control"
+                                />
+                            </div>
+                            <button type="submit" className="btn btn-primary w-100">Iniciar sesión</button>
+                            <div className="mt-3 text-center">
+                                <span>¿No tienes una cuenta? </span>
+                                <Link to="/register" className="register-link">
+                                    Regístrate aquí
+                                </Link>
+                            </div>
+                        </form>
+                    )}
+                    {loginFail && (
+                        <div className="alert alert-danger mt-3" role="alert">
+                            <strong>Error: </strong>
+                            Datos inválidos. Por favor, intenta de nuevo.
                         </div>
-                        <div className="mb-3">
-                            <label htmlFor="user_password" className="form-label">Password</label>
-                            <input
-                                type="password"
-                                name="password"
-                                id="user_password"
-                                placeholder="Password"
-                                value={user.password}
-                                className="form-control"
-                                onChange={handleChange}
-                            />
-                        </div>
-                        <button className="btn btn-primary">Login</button>
-                        {/* New register button and link */}
-                        <div className="mt-3 text-center">
-                            ¿No tienes una cuenta?
-                            <Link to="/register" className="ms-2 text-decoration-none">
-                            Regístrate aquí
-                            </Link>
-                        </div>
-                        {/* End of new register button and link */}
-                    </form>
-            }
-            {
-                loginFail ? <div class="alert alert-danger" role="alert">
-                    Datos Invalidos
-                </div> : <></>
-
-            }
+                    )}
+                </div>
+            </div>
         </div>
-    )
+    );
 }
