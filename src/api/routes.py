@@ -245,6 +245,7 @@ def get_organization_users():
         "id": user.id,
         "first_name": user.first_name,
         "last_name": user.last_name,
+        "avatar": user.avatar,
         "email": user.email,
         "username": user.username,
         "role_id": user.role_id

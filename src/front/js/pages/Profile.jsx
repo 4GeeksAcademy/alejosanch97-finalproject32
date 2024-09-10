@@ -16,6 +16,7 @@ export const Profile = () => {
         first_name: "",
         last_name: "",
         username: "",
+        avatar: "",
         email: "",
         password: "",
         role_id: 2, // Por defecto, rol de usuario
@@ -134,6 +135,7 @@ export const Profile = () => {
                     first_name: "",
                     last_name: "",
                     username: "",
+                    avatar: "",
                     email: "",
                     password: "",
                     role_id: 2,
@@ -201,7 +203,7 @@ export const Profile = () => {
                 <div className="card-body">
                     <div className="row">
                         <div className="col-md-4 text-center d-flex flex-column align-items-center">
-                            <img src="https://picsum.photos/200" className="rounded-circle img-thumbnail mb-3 col-8" alt="Imagen de perfil" />
+                            <img src={store.user.avatar} className="rounded-circle img-thumbnail mb-3 col-8" alt="Imagen de perfil" />
                             <h2 className="text-primary">{store.user.first_name} {store.user.last_name}</h2>
                             <p className="text-muted">{store.user.email}</p>
                             <p className="badge bg-info col-2">Rol: {store.user.role_id}</p>
@@ -360,6 +362,7 @@ export const Profile = () => {
                                 required
                             />
                         </div>
+
                         <div className="mb-3">
                             <label htmlFor="email" className="form-label">Email</label>
                             <input
@@ -488,6 +491,21 @@ export const Profile = () => {
                                             name="username"
                                             value={editingUser.username}
                                             onChange={handleEditInputChange}
+                                        />
+                                    </div>
+                                    <div className="mb-3 d-flex flex-column">
+                                        <label htmlFor="avatar" className="form-label">Imagen de perfile</label>
+                                        <input
+                                            type="file"
+                                            id="avatar"
+                                            name="avatar"
+                                            accept="image/png, image/jpeg"
+
+                                            className="form-control"
+                                            onChange={(event) => {
+                                                setFormData({ ...formData, avatar: event.target.files[0] })
+                                            }}
+                                            required
                                         />
                                     </div>
                                     <div className="mb-3">
