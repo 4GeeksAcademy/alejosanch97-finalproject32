@@ -803,6 +803,13 @@ const getState = ({ getStore, getActions, setStore }) => {
 				  console.error("Error fetching project progress", error);
 				}
 			  },
+
+			  logout: () => {
+				setStore({
+					token: null
+				})
+				localStorage.removeItem("token")
+			  },
 		}
 	};
 };
