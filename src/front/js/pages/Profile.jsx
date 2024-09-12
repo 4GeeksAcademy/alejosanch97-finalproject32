@@ -169,27 +169,27 @@ export const Profile = () => {
         e.preventDefault();
         try {
             const formData = new FormData();
-    
+        
             // Agregar datos del usuario
             for (let key in newUser) {
                 if (newUser[key] !== undefined && newUser[key] !== null) {
-                    formData.append(`user[${key}]`, newUser[key]);
+                    formData.append(key, newUser[key]);
                 }
             }
-    
+        
             // Agregar role_id y enterprise_id
-            formData.append('user[role_id]', '2');
-            formData.append('user[enterprise_id]', store.user.enterprise_id.toString());
-    
+            formData.append('role_id', '2');
+            formData.append('enterprise_id', store.user.enterprise_id.toString());
+        
             // Agregar datos de la empresa
-            formData.append('enterprise[name]', store.user.organization_name);
-            formData.append('enterprise[address]', store.user.organization_address || "Dirección no especificada");
-    
+            formData.append('organization_name', store.user.organization_name);
+            formData.append('organization_address', store.user.organization_address || "Dirección no especificada");
+        
             // Si hay un archivo de avatar, agregarlo
             if (newUser.avatar instanceof File) {
                 formData.append('avatar', newUser.avatar);
             }
-    
+        
             console.log("Datos del nuevo usuario:", Object.fromEntries(formData));
             
             const result = await actions.registerUserAndEnterprise(formData);
