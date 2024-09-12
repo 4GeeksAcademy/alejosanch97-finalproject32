@@ -1,12 +1,15 @@
 import React, { useEffect, useContext } from 'react';
 import { Context } from "../store/appContext";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useNavigate } from 'react-router-dom';
+
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 
 export const TaskManager = () => {
   const { store, actions } = useContext(Context);
+  const navigate = useNavigate();
 
   useEffect(() => {
     actions.getProjectProgress();
@@ -96,6 +99,11 @@ export const TaskManager = () => {
               </tbody>
             </table>
           </div>
+        </div>
+        <div className="d-flex justify-content-between align-items-center mb-4">
+            <button className="btn btn-secondary" onClick={() => navigate(-1)}>
+              Return to Profile
+            </button>
         </div>
       </div>
     </div>

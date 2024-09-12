@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Context } from "../store/appContext";
 import "../../styles/projectmanager.css";
+import { useNavigate } from 'react-router-dom';
 
 export const ProjectManager = () => {
     const { store, actions } = useContext(Context);
@@ -16,6 +17,7 @@ export const ProjectManager = () => {
     const [newTaskComment, setNewTaskComment] = useState({});
     const [newComment, setNewComment] = useState('');
     const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (selectedProject) {
@@ -230,6 +232,12 @@ export const ProjectManager = () => {
                         </div>
                     </div>
                 </div>
+                <div className="d-flex justify-content-between align-items-center mb-4">
+                    <button className="btn btn-secondary" onClick={() => navigate(-1)}>
+                        Return to Profile
+                    </button>
+                </div>
+
                 {selectedProject && (
                     <div className="col-md-9">
                         <div className="card">
@@ -457,6 +465,7 @@ export const ProjectManager = () => {
                         </div>
                     </div>
                 )}
+                
             </div>
             {editingProject && (
                 <div className="modal" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
@@ -527,6 +536,7 @@ export const ProjectManager = () => {
                     </div>
                 </div>
             )}
+            
             {showAddTaskModal && (
                 <div className="modal" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
                     <div className="modal-dialog">
@@ -590,5 +600,6 @@ export const ProjectManager = () => {
                 </div>
             )}
         </div>
+        
     );
 };

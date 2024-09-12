@@ -71,6 +71,9 @@ export const Profile = () => {
                 alert("Usuario actualizado con éxito");
                 setEditingUser(null);
                 await actions.getOrganizationUsers();
+                if (editingUser.id === store.user.id) {
+                    await actions.getUserLogin();
+                }
             } else {
                 alert("Error al actualizar usuario: " + result.message);
             }
@@ -80,10 +83,18 @@ export const Profile = () => {
     };
 
     const handleEditInputChange = (e) => {
-        setEditingUser({
-            ...editingUser,
-            [e.target.name]: e.target.value
-        });
+        const { name, value, files } = e.target;
+        if (name === 'avatar' && files.length > 0) {
+            setEditingUser({
+                ...editingUser,
+                [name]: files[0]
+            });
+        } else {
+            setEditingUser({
+                ...editingUser,
+                [name]: value
+            });
+        }
     };
 
     const handleDeleteUser = async (userId) => {
@@ -157,20 +168,32 @@ export const Profile = () => {
     const handleCreateUser = async (e) => {
         e.preventDefault();
         try {
-            const userToCreate = {
-                user: {
-                    ...newUser,
-                    role_id: 2,
-                    enterprise_id: store.user.enterprise_id
-                },
-                enterprise: {
-                    name: store.user.organization_name,
-                    // Asumimos que ya tienes la dirección de la empresa en el store
-                    address: store.user.organization_address || "Dirección no especificada"
+            const formData = new FormData();
+    
+            // Agregar datos del usuario
+            for (let key in newUser) {
+                if (newUser[key] !== undefined && newUser[key] !== null) {
+                    formData.append(`user[${key}]`, newUser[key]);
                 }
-            };
-            console.log("Datos del nuevo usuario:", userToCreate);
-            const result = await actions.registerUserAndEnterprise(userToCreate);
+            }
+    
+            // Agregar role_id y enterprise_id
+            formData.append('user[role_id]', '2');
+            formData.append('user[enterprise_id]', store.user.enterprise_id.toString());
+    
+            // Agregar datos de la empresa
+            formData.append('enterprise[name]', store.user.organization_name);
+            formData.append('enterprise[address]', store.user.organization_address || "Dirección no especificada");
+    
+            // Si hay un archivo de avatar, agregarlo
+            if (newUser.avatar instanceof File) {
+                formData.append('avatar', newUser.avatar);
+            }
+    
+            console.log("Datos del nuevo usuario:", Object.fromEntries(formData));
+            
+            const result = await actions.registerUserAndEnterprise(formData);
+            
             if (result.success) {
                 alert(result.message || "Usuario creado con éxito");
                 setShowCreateUser(false);
@@ -402,66 +425,7 @@ export const Profile = () => {
                     </div>
                 </div>
             </div>
-            <div className="card mt-4">
-                <div className="card-body">
-                    <h3 className="card-title">Mis Proyectos</h3>
-                    <ul className="list-group">
-                        {store.projects.map((project) => (
-                            <li key={project.id} className="list-group-item">
-                                {project.name} - {project.description}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </div>
-            <div className="card mt-4">
-                <div className="card-body">
-                    <h3 className="card-title">Usuarios de la Organización</h3>
-                    <table className="table">
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Apellido</th>
-                                <th>Email</th>
-                                <th>Username</th>
-                                <th>Rol</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {store.organizationUsers && store.organizationUsers.map((user) => (
-                                <tr key={user.id}>
-                                    <td>{user.first_name}</td>
-                                    <td>{user.last_name}</td>
-                                    <td>{user.email}</td>
-                                    <td>{user.username}</td>
-                                    <td>{user.role_id}</td>
-                                    <td>
-                                        {(store.user.role_id === 1 || store.user.role_id === "1") && (
-                                            <button className="btn btn-primary btn-sm mx-2 px-3" onClick={() => handleEditUser(user)}>
-                                                Editar
-                                            </button>
-                                        )}
-
-                                        {(store.user.role_id === 1 || store.user.role_id === "1") && (
-                                            <button className="btn btn-danger btn-sm mx-2" onClick={() => handleDeleteUser(user.id)}>
-                                                Eliminar
-                                            </button>
-                                        )}
-
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div className="card mt-4">
-                <div className="card-body">
-                    <h3 className="card-title">Calendario de Tareas</h3>
-
-                </div>
-            </div>
+            
             {showCreateUser && (
                 <div className="modal show">
                     <div className="modal-dialog">
@@ -564,18 +528,14 @@ export const Profile = () => {
                                         <input type="text" className="form-control" id="edit_username" name="username" value={editingUser.username} onChange={handleEditInputChange} required />
                                     </div>
                                     <div className="mb-3 d-flex flex-column">
-                                        <label htmlFor="avatar" className="form-label">Imagen de perfile</label>
+                                        <label htmlFor="avatar" className="form-label">Profile Image</label>
                                         <input
                                             type="file"
+                                            className="form-control"
                                             id="avatar"
                                             name="avatar"
-                                            accept="image/png, image/jpeg"
-
-                                            className="form-control"
-                                            onChange={(event) => {
-                                                setFormData({ ...formData, avatar: event.target.files[0] })
-                                            }}
-                                            required
+                                            onChange={handleEditInputChange}
+                                            accept="image/*"
                                         />
                                     </div>
                                     <div className="mb-3">
