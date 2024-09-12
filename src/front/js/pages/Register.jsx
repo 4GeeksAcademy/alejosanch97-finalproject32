@@ -26,27 +26,16 @@ export const Register = () => {
     const [error, setError] = useState("");
 
     const handleChange = (event) => {
-        const { name, value } = event.target;
-        if (name === "name" || name === "address") {
+        const { name, value, files } = event.target;
+        if (name === "avatar") {
             setFormData(prevState => ({
                 ...prevState,
-                enterprise: {
-                    ...prevState.enterprise,
-                    [name]: value
-                }
-            }));
-        } else if (name === "avatar") {
-            setFormData(prevState => ({
-                ...prevState,
-                avatar: event.target.files[0]  // Guardamos el archivo directamente
+                avatar: files[0]
             }));
         } else {
             setFormData(prevState => ({
                 ...prevState,
-                user: {
-                    ...prevState.user,
-                    [name]: value
-                }
+                [name]: value
             }));
         }
     };
@@ -56,20 +45,13 @@ export const Register = () => {
         try {
             const newFormData = new FormData();
             
-            // Agregar los datos del usuario
-            Object.entries(formData.user).forEach(([key, value]) => {
-                newFormData.append(key, value);
+            Object.entries(formData).forEach(([key, value]) => {
+                if (key === "avatar" && value instanceof File) {
+                    newFormData.append(key, value);
+                } else if (value !== null && value !== "") {
+                    newFormData.append(key, value);
+                }
             });
-            
-            // Agregar los datos de la empresa
-            Object.entries(formData.enterprise).forEach(([key, value]) => {
-                newFormData.append(key, value);
-            });
-            
-            // Agregar el archivo de avatar
-            if (formData.avatar) {
-                newFormData.append("avatar", formData.avatar);
-            }
 
             const result = await actions.registerUserAndEnterprise(newFormData);
             if (result.success) {
