@@ -8,16 +8,19 @@ export const Register = () => {
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
-
-        first_name: "",
-        last_name: "",
-        username: "",
-        avatar: "",
-        email: "",
-        password: "",
-        role_id: "",
-        name: "",
-        address: ""
+        user: {
+            first_name: "",
+            last_name: "",
+            username: "",
+            email: "",
+            password: "",
+            role_id: "",
+        },
+        enterprise: {
+            name: "",
+            address: ""
+        },
+        avatar: null  // Nuevo campo para el archivo de avatar
     });
 
     const [error, setError] = useState("");
@@ -31,6 +34,11 @@ export const Register = () => {
                     ...prevState.enterprise,
                     [name]: value
                 }
+            }));
+        } else if (name === "avatar") {
+            setFormData(prevState => ({
+                ...prevState,
+                avatar: event.target.files[0]  // Guardamos el archivo directamente
             }));
         } else {
             setFormData(prevState => ({
@@ -47,18 +55,27 @@ export const Register = () => {
         event.preventDefault();
         try {
             const newFormData = new FormData();
+            
+            // Agregar los datos del usuario
             Object.entries(formData.user).forEach(([key, value]) => {
                 newFormData.append(key, value);
             });
+            
+            // Agregar los datos de la empresa
             Object.entries(formData.enterprise).forEach(([key, value]) => {
                 newFormData.append(key, value);
             });
+            
+            // Agregar el archivo de avatar
+            if (formData.avatar) {
+                newFormData.append("avatar", formData.avatar);
+            }
 
             const result = await actions.registerUserAndEnterprise(newFormData);
             if (result.success) {
                 navigate("/login");
             } else {
-                setError(result.message);
+                setError(result.message || "Error en el registro. Por favor, inténtalo de nuevo.");
             }
         } catch (error) {
             setError("Error en el registro. Por favor, inténtalo de nuevo.");

@@ -54,68 +54,72 @@ def handle_hello():
 #ruta para añadir un usuario
 @api.route('/user', methods=["POST"])
 def add_user():
-    data_form = request.form
-    data_files = request.files
-    user_data = {
-        "first_name": data_form.get("first_name"),
-        "last_name": data_form.get("last_name"),
-        "username": data_form.get("username"),
-        "avatar": data_files.get("avatar"),
-        "email": data_form.get("email"),
-        "password": data_form.get("password"),
-        "role_id": data_form.get("role_id"),
-        "name": data_form.get("name"),
-        "address": data_form.get("address"),
-    }
+    user_data = {}
+    enterprise_data = {}
 
-    print(user_data)
-    
-    if user_data.get("email", None) is None or user_data.get("password", None) is None or user_data.get("last_name", None) is None:
+    for key, value in request.form.items():
+        if key.startswith('user['):
+            user_data[key[5:-1]] = value
+        elif key.startswith('enterprise['):
+            enterprise_data[key[11:-1]] = value
+
+    print("User data:", user_data)
+    print("Enterprise data:", enterprise_data)
+
+    if not user_data.get("email") or not user_data.get("password") or not user_data.get("last_name"):
         return jsonify({"message": "Se requieren email, contraseña y apellido"}), 400
 
-
-    # # Verificar si el usuario ya existe
+    # Verificar si el usuario ya existe
     existing_user = Users.query.filter_by(email=user_data.get("email")).one_or_none()
     if existing_user:
         return jsonify({"message": "El usuario ya existe"}), 400
-    
-    # # Crear la empresa si no existe
-    enterprise = Enterprises.query.filter_by(name=user_data.get("name")).first()
-    if enterprise is None:
-        try:
-            enterprise = Enterprises(
-                name=user_data.get("name"),
-                address=user_data.get("address")
-            )
-            db.session.add(enterprise)
-            db.session.commit()  # Asigna un ID a la empresa
-        except Exception as error:
-            print(error.args)
-   
+
+    # Crear la empresa si no existe
+    enterprise = None
+    if enterprise_data.get("name"):
+        enterprise = Enterprises.query.filter_by(name=enterprise_data.get("name")).first()
+        if enterprise is None:
+            try:
+                enterprise = Enterprises(
+                    name=enterprise_data.get("name"),
+                    address=enterprise_data.get("address")
+                )
+                db.session.add(enterprise)
+                db.session.commit()
+            except Exception as error:
+                print(error.args)
+                return jsonify({"message": f"Error al crear la empresa: {str(error)}"}), 500
+
     try:
         salt = b64encode(os.urandom(32)).decode("utf-8")
         hashed_password = set_password(user_data.get("password"), salt)
-    
-        #cloudinary
-        result_cloud = uploader.upload(user_data.get("avatar"))
+
+        avatar_url = None
+        avatar_public_id = None
+        if 'avatar' in request.files:
+            avatar_file = request.files['avatar']
+            if avatar_file.filename != '':
+                # Cloudinary upload
+                result_cloud = uploader.upload(avatar_file)
+                avatar_url = result_cloud.get("secure_url")
+                avatar_public_id = result_cloud.get("public_id")
 
         new_user = Users(
             role_id=user_data.get("role_id"),
             email=user_data.get("email"),
             username=user_data.get("username"),
-            
             password=hashed_password,
             first_name=user_data.get("first_name"),
             last_name=user_data.get("last_name"),
-            enterprise_id=enterprise.id if enterprise else None,
+            enterprise_id=enterprise.id if enterprise else user_data.get("enterprise_id"),
             salt=salt,
-            avatar = result_cloud.get("secure_url"),
-            avatar_public_id = result_cloud.get("public_id")
+            avatar=avatar_url,
+            avatar_public_id=avatar_public_id
         )
 
         db.session.add(new_user)
         db.session.commit()
-        return jsonify({"message": "Usuario y empresa creados exitosamente"}), 201
+        return jsonify({"message": "Usuario creado exitosamente"}), 201
 
     except Exception as error:
         db.session.rollback()
@@ -130,37 +134,59 @@ def update_user(user_id):
     current_user_id = get_jwt_identity()
     current_user = Users.query.get(current_user_id)
     
-    # Verificar si el usuario actual es un administrador
-    if current_user.role_id not in [1, 2]:
+    # Verificar si el usuario actual es un administrador o el propietario del perfil
+    if current_user.role_id not in [1, 2] and current_user_id != user_id:
         return jsonify({"message": "No tienes permisos para realizar esta acción"}), 403
     
     user_to_update = Users.query.get(user_id)
     if not user_to_update:
         return jsonify({"message": "Usuario no encontrado"}), 404
 
-    data = request.json
-    
     # Actualizar los campos del usuario
-    user_to_update.first_name = data.get('first_name', user_to_update.first_name)
-    user_to_update.last_name = data.get('last_name', user_to_update.last_name)
-    user_to_update.username = data.get('username', user_to_update.username)
-    user_to_update.email = data.get('email', user_to_update.email)
+    user_to_update.first_name = request.form.get('first_name', user_to_update.first_name)
+    user_to_update.last_name = request.form.get('last_name', user_to_update.last_name)
+    user_to_update.username = request.form.get('username', user_to_update.username)
+    user_to_update.email = request.form.get('email', user_to_update.email)
     
     # Si el usuario actual tiene rol 1 (admin), permitir editar todos los campos
     if current_user.role_id == 1:
-        user_to_update.role_id = data.get('role_id', user_to_update.role_id)
-           
-        
+        user_to_update.role_id = request.form.get('role_id', user_to_update.role_id)
+    
     # Si se proporciona una nueva contraseña, actualizarla
-    if 'password' in data and data['password']:
+    new_password = request.form.get('password')
+    if new_password:
         salt = b64encode(os.urandom(32)).decode("utf-8")
-        hashed_password = set_password(data['password'], salt)
+        hashed_password = set_password(new_password, salt)
         user_to_update.password = hashed_password
         user_to_update.salt = salt
 
+    # Manejar la actualización de la imagen de perfil
+    if 'avatar' in request.files:
+        avatar_file = request.files['avatar']
+        if avatar_file.filename != '':
+            # Eliminar la imagen anterior de Cloudinary si existe
+            if user_to_update.avatar_public_id:
+                uploader.destroy(user_to_update.avatar_public_id)
+            
+            # Subir la nueva imagen a Cloudinary
+            result_cloud = uploader.upload(avatar_file)
+            user_to_update.avatar = result_cloud.get("secure_url")
+            user_to_update.avatar_public_id = result_cloud.get("public_id")
+
     try:
         db.session.commit()
-        return jsonify({"message": "Usuario actualizado con éxito"}), 200
+        return jsonify({
+            "message": "Usuario actualizado con éxito",
+            "user": {
+                "id": user_to_update.id,
+                "first_name": user_to_update.first_name,
+                "last_name": user_to_update.last_name,
+                "username": user_to_update.username,
+                "email": user_to_update.email,
+                "role_id": user_to_update.role_id,
+                "avatar": user_to_update.avatar
+            }
+        }), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": f"Error al actualizar usuario: {str(e)}"}), 500

@@ -141,32 +141,47 @@ const getState = ({ getStore, getActions, setStore }) => {
             },
 
 			updateUser: async (userData) => {
-                const store = getStore();
-                try {
-                    const response = await fetch(`${process.env.BACKEND_URL}/api/user/${userData.id}`, {
-                        method: "PUT",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Authorization": `Bearer ${store.token}`
-                        },
-                        body: JSON.stringify(userData)
-                    });
-                    const data = await response.json();
-                    if (response.status === 200) {
-                        // Actualizar el usuario en el store
-                        const updatedUsers = store.organizationUsers.map(user => 
-                            user.id === userData.id ? {...user, ...userData} : user
-                        );
-                        setStore({ organizationUsers: updatedUsers });
-                        return { success: true, message: "Usuario actualizado con éxito" };
-                    } else {
-                        return { success: false, message: data.message || "Error al actualizar usuario" };
-                    }
-                } catch (error) {
-                    console.error("Error al actualizar usuario:", error);
-                    return { success: false, message: "Error en la conexión" };
-                }
-            },
+				const store = getStore();
+				try {
+					const formData = new FormData();
+					
+					// Agregar todos los campos de usuario al formData
+					for (let key in userData) {
+						if (key !== 'avatar' || (key === 'avatar' && userData[key] instanceof File)) {
+							formData.append(key, userData[key]);
+						}
+					}
+			
+					const response = await fetch(`${process.env.BACKEND_URL}/api/user/${userData.id}`, {
+						method: "PUT",
+						headers: {
+							"Authorization": `Bearer ${store.token}`
+						},
+						body: formData
+					});
+					const data = await response.json();
+					if (response.status === 200) {
+						// Actualizar el usuario en el store
+						const updatedUsers = store.organizationUsers.map(user => 
+							user.id === userData.id ? {...user, ...data} : user
+						);
+						setStore({ organizationUsers: updatedUsers });
+						
+						// Si el usuario actualizado es el usuario actual, actualizar también store.user
+						if (store.user.id === userData.id) {
+							setStore({ user: {...store.user, ...data} });
+						}
+						
+						return { success: true, message: "Usuario actualizado con éxito" };
+					} else {
+						return { success: false, message: data.message || "Error al actualizar usuario" };
+					}
+				} catch (error) {
+					console.error("Error al actualizar usuario:", error);
+					return { success: false, message: "Error en la conexión" };
+				}
+			},
+			
 
 			deleteUser: async (userId) => {
                 const store = getStore();
@@ -649,15 +664,13 @@ const getState = ({ getStore, getActions, setStore }) => {
 
 			registerUserAndEnterprise: async (formData) => {
 				try {
-					console.log(formData)
 					const response = await fetch(`${process.env.BACKEND_URL}/api/user`, {
 						method: "POST",
-						
 						body: formData
 					});
 					const data = await response.json();
 					if (response.ok) {
-						return { success: true, message: "Usuario y empresa registrados con éxito" };
+						return { success: true, message: data.message || "Usuario y empresa registrados con éxito" };
 					} else {
 						return { success: false, message: data.message || "Error en el registro" };
 					}
