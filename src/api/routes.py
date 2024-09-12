@@ -60,11 +60,12 @@ def add_user():
         'username': request.form.get('username'),
         'email': request.form.get('email'),
         'password': request.form.get('password'),
-        'role_id': request.form.get('role_id')
+        'role_id': request.form.get('role_id'),
+        'enterprise_id': request.form.get('enterprise_id')
     }
     enterprise_data = {
-        'name': request.form.get('name'),
-        'address': request.form.get('address')
+        'name': request.form.get('organization_name') or request.form.get('name'),
+        'address': request.form.get('organization_address') or request.form.get('address')
     }
 
     print("User data:", user_data)
@@ -78,7 +79,7 @@ def add_user():
     if existing_user:
         return jsonify({"message": "El usuario ya existe"}), 400
 
-    # Crear la empresa si no existe
+    # Obtener la empresa existente o crear una nueva si no existe
     enterprise = None
     if enterprise_data.get("name"):
         enterprise = Enterprises.query.filter_by(name=enterprise_data.get("name")).first()
@@ -93,6 +94,14 @@ def add_user():
             except Exception as error:
                 print(error.args)
                 return jsonify({"message": f"Error al crear la empresa: {str(error)}"}), 500
+    
+    # Si no se proporcionó un enterprise_id, usar el id de la empresa recién creada o encontrada
+    if not user_data.get('enterprise_id') and enterprise:
+        user_data['enterprise_id'] = enterprise.id
+    
+    # Si aún no tenemos enterprise_id, devolver un error
+    if not user_data.get('enterprise_id'):
+        return jsonify({"message": "Se requiere enterprise_id o información de la empresa"}), 400
 
     try:
         salt = b64encode(os.urandom(32)).decode("utf-8")
@@ -115,7 +124,7 @@ def add_user():
             password=hashed_password,
             first_name=user_data.get("first_name"),
             last_name=user_data.get("last_name"),
-            enterprise_id=enterprise.id if enterprise else None,
+            enterprise_id=user_data.get("enterprise_id"),
             salt=salt,
             avatar=avatar_url,
             avatar_public_id=avatar_public_id
@@ -129,7 +138,6 @@ def add_user():
         db.session.rollback()
         print(f"Error al crear usuario: {str(error)}")
         return jsonify({"message": f"Error al crear usuario: {str(error)}"}), 500
-    
 
 #edit user
 @api.route('/user/<int:user_id>', methods=['PUT'])

@@ -8,19 +8,15 @@ export const Register = () => {
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
-        user: {
-            first_name: "",
-            last_name: "",
-            username: "",
-            email: "",
-            password: "",
-            role_id: "",
-        },
-        enterprise: {
-            name: "",
-            address: ""
-        },
-        avatar: null  // Nuevo campo para el archivo de avatar
+        first_name: "",
+        last_name: "",
+        username: "",
+        email: "",
+        password: "",
+        role_id: "2",  // Por defecto, asignamos el rol de usuario normal
+        name: "",  // Nombre de la empresa
+        address: "",  // Dirección de la empresa
+        avatar: null
     });
 
     const [error, setError] = useState("");
@@ -44,7 +40,8 @@ export const Register = () => {
         event.preventDefault();
         try {
             const newFormData = new FormData();
-            
+
+            // Agregar todos los campos al FormData
             Object.entries(formData).forEach(([key, value]) => {
                 if (key === "avatar" && value instanceof File) {
                     newFormData.append(key, value);
@@ -52,6 +49,11 @@ export const Register = () => {
                     newFormData.append(key, value);
                 }
             });
+
+            // Imprimir el contenido del FormData para depuración
+            for (let pair of newFormData.entries()) {
+                console.log(pair[0] + ': ' + pair[1]);
+            }
 
             const result = await actions.registerUserAndEnterprise(newFormData);
             if (result.success) {
