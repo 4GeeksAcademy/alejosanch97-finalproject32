@@ -54,14 +54,18 @@ def handle_hello():
 #ruta para añadir un usuario
 @api.route('/user', methods=["POST"])
 def add_user():
-    user_data = {}
-    enterprise_data = {}
-
-    for key, value in request.form.items():
-        if key.startswith('user['):
-            user_data[key[5:-1]] = value
-        elif key.startswith('enterprise['):
-            enterprise_data[key[11:-1]] = value
+    user_data = {
+        'first_name': request.form.get('first_name'),
+        'last_name': request.form.get('last_name'),
+        'username': request.form.get('username'),
+        'email': request.form.get('email'),
+        'password': request.form.get('password'),
+        'role_id': request.form.get('role_id')
+    }
+    enterprise_data = {
+        'name': request.form.get('name'),
+        'address': request.form.get('address')
+    }
 
     print("User data:", user_data)
     print("Enterprise data:", enterprise_data)
@@ -111,7 +115,7 @@ def add_user():
             password=hashed_password,
             first_name=user_data.get("first_name"),
             last_name=user_data.get("last_name"),
-            enterprise_id=enterprise.id if enterprise else user_data.get("enterprise_id"),
+            enterprise_id=enterprise.id if enterprise else None,
             salt=salt,
             avatar=avatar_url,
             avatar_public_id=avatar_public_id

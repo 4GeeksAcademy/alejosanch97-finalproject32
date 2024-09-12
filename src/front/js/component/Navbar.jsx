@@ -19,9 +19,6 @@ export const Navbar = () => {
             </div>
             <div className="navbar-right">
                 <Link to="/login" className="nav-link">Iniciar sesión</Link>
-                <li class="nav-item">
-                    <Link className="nav-link" to="/profile">Profile</Link>
-                </li>
                 <button className="contact-sales-btn">Contactar a ventas</button>
                 <button className="start-now-btn">Empezar ahora →</button>
             </div>
