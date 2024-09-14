@@ -20,8 +20,10 @@ export const Navbar = () => {
                     {!store.token ? (
                         <>
                             <Link to="/login" className="nav-link">Iniciar sesión</Link>
-                            <button className="contact-sales-btn">Contactar a ventas</button>
-                            <button className="start-now-btn">Empezar ahora →</button>
+                            <Link to="/dashboard" className="nav-link">Contactar a ventas</Link>
+                            <Link to="/register" className="cta-button">
+				                Empezar ahora
+				            </Link>
                         </>
                     ) : (
                         <button
