@@ -15,7 +15,7 @@ export const Profile = () => {
     const [showCreateProject, setShowCreateProject] = useState(false);
     const [calendarEvents, setCalendarEvents] = useState([]);
     const [filteredTasks, setFilteredTasks] = useState([]);
-    const [taskFilter, setTaskFilter] = useState("all");
+    const [taskFilter, setTaskFilter] = useState("Pending");
 
 
     const [newUser, setNewUser] = useState({
@@ -295,46 +295,36 @@ export const Profile = () => {
                                     </button>
                                 </div>
                                 <div className="col-md-8">
-                                    <h3 className="text-secondary mb-4">User Profile</h3>
-                                    <div className="form-check form-switch mb-4">
-                                        <input type="checkbox" className="form-check-input" id="user-notifications" />
-                                        <label htmlFor="user-notifications" className="form-check-label">Notifications</label>
+                                    <h4 className="text-primary mb-3">Assigned Tasks</h4>
+                                    <div className="mb-3">
+                                        <select
+                                            className="form-select"
+                                            value={taskFilter}
+                                            onChange={(e) => setTaskFilter(e.target.value)}
+                                        >
+                                            <option value="all">All</option>
+                                            <option value="Pending">Pending</option>
+                                            <option value="In Progress">In Progress</option>
+                                            <option value="Completed">Completed</option>
+                                        </select>
                                     </div>
+                                    {filteredTasks && filteredTasks.length > 0 ? (
+                                        filteredTasks.map(task => (
+                                            <div key={task.task_id} className="card mb-2">
+                                                <div className="card-body">
+                                                    <h5 className="card-title">{task.task_name}</h5>
+                                                    <h6 className="card-subtitle mb-2 text-muted">Project: {task.project_name}</h6>
+                                                    <p className="card-text">{task.task_description}</p>
+                                                    <p className="card-text"><small className="text-muted">Status: {task.task_status}</small></p>
+                                                    <p className="card-text"><small className="text-muted">Due date: {new Date(task.task_due_date).toLocaleDateString()}</small></p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p>No tasks assigned for this filter.</p>
+                                    )}
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    <div className="card mb-4">
-                        <div className="card-body">
-                            <h4 className="card-title text-primary">Assigned Tasks</h4>
-                            <div className="mb-3">
-                                <select
-                                    className="form-select"
-                                    value={taskFilter}
-                                    onChange={(e) => setTaskFilter(e.target.value)}
-                                >
-                                    <option value="all">All</option>
-                                    <option value="Pending">Pending</option>
-                                    <option value="In Progress">In Progress</option>
-                                    <option value="Completed">Completed</option>
-                                </select>
-                            </div>
-                            {filteredTasks && filteredTasks.length > 0 ? (
-                                filteredTasks.map(task => (
-                                    <div key={task.task_id} className="card mb-2">
-                                        <div className="card-body">
-                                            <h5 className="card-title">{task.task_name}</h5>
-                                            <h6 className="card-subtitle mb-2 text-muted">Project: {task.project_name}</h6>
-                                            <p className="card-text">{task.task_description}</p>
-                                            <p className="card-text"><small className="text-muted">Status: {task.task_status}</small></p>
-                                            <p className="card-text"><small className="text-muted">Due date: {new Date(task.task_due_date).toLocaleDateString()}</small></p>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <p>No tasks assigned for this filter.</p>
-                            )}
                         </div>
                     </div>
 

@@ -203,6 +203,41 @@ def update_user(user_id):
         db.session.rollback()
         return jsonify({"message": f"Error al actualizar usuario: {str(e)}"}), 500
 
+
+@api.route('/reset-password', methods=['POST'])
+def reset_password():
+    data = request.get_json()
+    email = data.get('email')
+    new_password = data.get('newPassword')
+
+    if not email or not new_password:
+        return jsonify({"message": "Se requieren email y nueva contraseña"}), 400
+
+    user = Users.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"message": "Usuario no encontrado"}), 404
+
+    try:
+        salt = b64encode(os.urandom(32)).decode("utf-8")
+        hashed_password = set_password(new_password, salt)
+        
+        user.password = hashed_password
+        user.salt = salt
+        
+        db.session.commit()
+        
+        # Crear un nuevo token para el usuario
+        access_token = create_access_token(identity=user.id)
+        
+        return jsonify({
+            "message": "Contraseña restablecida con éxito",
+            "token": access_token
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Error al restablecer la contraseña: {str(e)}"}), 500
+
+
 # delete user
 @api.route('/user/<int:user_id>', methods=['DELETE'])
 @jwt_required()
