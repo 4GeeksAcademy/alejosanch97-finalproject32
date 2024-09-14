@@ -1,0 +1,171 @@
+.dashboard-container {
+    font-family: 'Arial', sans-serif;
+    color: #333;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  .hero-section {
+    text-align: center;
+    margin-bottom: 4rem;
+  }
+  
+  .hero-title {
+    font-size: 3rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    color: #2c3e50;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.2rem;
+    color: #7f8c8d;
+    margin-bottom: 2rem;
+  }
+  
+  .product-selection-title {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: #34495e;
+  }
+  
+  .product-options {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+  }
+  
+  .product-option {
+    text-align: center;
+  }
+  
+  .product-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+  }
+  
+  .product-icon img {
+    width: 50%;
+    height: auto;
+  }
+  
+  .crm-icon { background-color: #3498db; }
+  .work-management-icon { background-color: #9b59b6; }
+  .dev-icon { background-color: #2ecc71; }
+  
+  .pricing-section {
+    background-color: #f9f9f9;
+    padding: 3rem;
+    border-radius: 10px;
+  }
+  
+  .pricing-cards {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 2rem;
+  }
+  
+  .pricing-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    flex: 1;
+    min-width: 250px;
+    transition: transform 0.3s ease;
+  }
+  
+  .pricing-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .plan-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    color: #2c3e50;
+  }
+  
+  .plan-price {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    color: #27ae60;
+  }
+  
+  .price-period {
+    font-size: 1rem;
+    color: #7f8c8d;
+  }
+  
+  .plan-description {
+    margin-bottom: 1.5rem;
+    color: #34495e;
+  }
+  
+  .plan-button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .plan-button:hover {
+    background-color: #2980b9;
+  }
+  
+  .plan-features {
+    list-style-type: none;
+    padding: 0;
+    margin-top: 1.5rem;
+  }
+  
+  .plan-features li {
+    margin-bottom: 0.5rem;
+    color: #7f8c8d;
+  }
+  
+  .plan-features li::before {
+    content: '✓';
+    color: #27ae60;
+    margin-right: 0.5rem;
+  }
+  
+  .corporate-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 1rem;
+  }
+  
+  .corporate-icon img {
+    width: 100%;
+    height: auto;
+  }
+  
+  /* Estilos específicos para cada plan */
+  .gratis-plan { border-top: 4px solid #3498db; }
+  .basico-plan { border-top: 4px solid #e74c3c; }
+  .estandar-plan { border-top: 4px solid #f1c40f; }
+  .pro-plan { border-top: 4px solid #9b59b6; }
+  .corporativo-plan { border-top: 4px solid #34495e; }
+  
+  @media (max-width: 768px) {
+    .pricing-cards {
+      flex-direction: column;
+    }
+    
+    .pricing-card {
+      width: 100%;
+    }
+  }
