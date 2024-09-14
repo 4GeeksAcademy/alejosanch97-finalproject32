@@ -85,6 +85,11 @@ export const Login = () => {
                                     Regístrate aquí
                                 </Link>
                             </div>
+                            <div className="mt-2 text-center">
+                                <Link to="/tasks" className="forgot-password-link">
+                                    ¿Olvidaste tu contraseña?
+                                </Link>
+                            </div>
                         </form>
                     )}
                     {loginFail && (

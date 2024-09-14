@@ -91,30 +91,28 @@ const getState = ({ getStore, getActions, setStore }) => {
 			},
 
             login: async (user) => {
-				try {
-					const response = await fetch(`${process.env.BACKEND_URL}/api/login`, {
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json"
-						},
-						body: JSON.stringify(user)
-					})
-					const data = await response.json()
-					if (response.status == 200) {
-						setStore({
-							token: data.token
-						})
-						localStorage.setItem("token", data.token)
-						getActions().getUserLogin()
-						return true
-					} else {
-						return false
-					}
-
-				} catch (error) {
-					console.log(error)
-				}
-			},
+                try {
+                    const response = await fetch(`${process.env.BACKEND_URL}/api/login`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(user)
+                    });
+                    const data = await response.json();
+                    if (response.status === 200) {
+                        setStore({ token: data.token });
+                        localStorage.setItem("token", data.token);
+                        getActions().getUserLogin();
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } catch (error) {
+                    console.log(error);
+                    return false;
+                }
+            },
 
             getUserLogin: async () => {
                 try {
@@ -178,6 +176,27 @@ const getState = ({ getStore, getActions, setStore }) => {
 					}
 				} catch (error) {
 					console.error("Error al actualizar usuario:", error);
+					return { success: false, message: "Error en la conexión" };
+				}
+			},
+
+			resetPassword: async (userData) => {
+				try {
+					const response = await fetch(`${process.env.BACKEND_URL}/api/reset-password`, {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json"
+						},
+						body: JSON.stringify(userData)
+					});
+					const data = await response.json();
+					if (response.status === 200) {
+						return { success: true, message: data.message };
+					} else {
+						return { success: false, message: data.message };
+					}
+				} catch (error) {
+					console.error("Error al restablecer la contraseña:", error);
 					return { success: false, message: "Error en la conexión" };
 				}
 			},
