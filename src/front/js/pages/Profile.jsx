@@ -179,6 +179,7 @@ export const Profile = () => {
         
             // Agregar role_id y enterprise_id
             formData.append('role_id', '2');
+            console.log(store.user)
             formData.append('enterprise_id', store.user.enterprise_id.toString());
         
             // Agregar datos de la empresa
