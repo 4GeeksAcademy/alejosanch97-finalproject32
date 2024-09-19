@@ -233,7 +233,7 @@ export const ProjectManager = () => {
                     </div>
                 </div>
                 <div className="d-flex justify-content-between align-items-center mb-4">
-                    <button className="btn btn-secondary" onClick={() => navigate(-1)}>
+                    <button className="btn btn-secondary mt-3" onClick={() => navigate(-1)}>
                         Return to Profile
                     </button>
                 </div>
@@ -465,7 +465,7 @@ export const ProjectManager = () => {
                         </div>
                     </div>
                 )}
-                
+
             </div>
             {editingProject && (
                 <div className="modal" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
@@ -536,7 +536,7 @@ export const ProjectManager = () => {
                     </div>
                 </div>
             )}
-            
+
             {showAddTaskModal && (
                 <div className="modal" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
                     <div className="modal-dialog">
@@ -600,6 +600,6 @@ export const ProjectManager = () => {
                 </div>
             )}
         </div>
-        
+
     );
 };

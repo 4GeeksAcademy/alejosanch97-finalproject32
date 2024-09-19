@@ -7,7 +7,7 @@ export const Navbar = () => {
     const { store, actions } = useContext(Context);
 
     return (
-        <nav className="navbar">
+        <nav className="navbar ">
             <div className="navbar-container">
                 <div className="navbar-left">
                     <Link to="/" className="navbar-logo">
@@ -22,8 +22,8 @@ export const Navbar = () => {
                             <Link to="/login" className="nav-link">Iniciar sesión</Link>
                             <Link to="/dashboard" className="nav-link">Contactar a ventas</Link>
                             <Link to="/register" className="cta-button">
-				                Empezar ahora
-				            </Link>
+                                Empezar ahora
+                            </Link>
                         </>
                     ) : (
                         <button
