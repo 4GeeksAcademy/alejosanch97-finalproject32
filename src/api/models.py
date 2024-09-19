@@ -45,12 +45,12 @@ class Projects(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), unique=False)
     description = db.Column(db.String(800), unique=False)
-    start_date = db.Column(db.DateTime(), default=datetime.now(timezone.utc), unique=False)
+    start_date = db.Column(db.DateTime(), default=datetime.now(timezone.utc), nullable=False)
     end_date = db.Column(db.DateTime(), unique=False)
     enterprise_id = db.Column(db.Integer, db.ForeignKey('enterprises.id'), unique=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=False)
     priority = db.Column(db.String(20), default='medium') 
-    completed_at = db.Column(db.DateTime())
+    completed_at = db.Column(db.DateTime(), nullable=True)
 
     user = db.relationship('Users', back_populates='projects')
     enterprise = db.relationship('Enterprises', back_populates='projects')
@@ -58,6 +58,16 @@ class Projects(db.Model):
     members = db.relationship('ProjectMembers', back_populates='project')
     comments = db.relationship('ProjectComments', back_populates='project', cascade='all, delete-orphan')
 
+    def mark_as_completed(self):
+        if all(task.status == "Completed" for task in self.tasks):
+            self.completed_at = datetime.now(timezone.utc)
+
+    def calculate_duration(self):
+        if self.completed_at:
+            return self.completed_at - self.start_date
+        else:
+            return datetime.now(timezone.utc) - self.start_date
+    
     def serialize(self):
         return {
             "id": self.id,

@@ -79,7 +79,7 @@ export const TaskManager = () => {
           </ResponsiveContainer>
         </div>
 
-        <div className="col-md-6">
+        {/* <div className="col-md-6">
       <h2>Project Completion Time</h2>
       <div style={{ height: '300px', overflowY: 'auto' }}>
         <table className="table table-striped">
@@ -87,7 +87,6 @@ export const TaskManager = () => {
             <tr>
               <th>Project Name</th>
               <th>Time</th>
-              <th>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -95,13 +94,12 @@ export const TaskManager = () => {
               <tr key={index}>
                 <td>{project.project_name}</td>
                 <td>{project.completion_time}</td>
-                <td>{project.is_completed ? 'Completed' : 'In Progress'}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-    </div>
+    </div> */}
         <div className="d-flex justify-content-between align-items-center mb-4">
             <button className="btn btn-secondary" onClick={() => navigate(-1)}>
               Return to Profile
