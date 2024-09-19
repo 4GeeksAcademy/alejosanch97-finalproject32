@@ -205,9 +205,12 @@ export const ProjectManager = () => {
             {error && <div className="alert alert-danger">{error}</div>}
             <div className="row">
                 <div className="col-md-3">
-                    <div className="card">
-                        <div className="card-header bg-primary text-white">
+                    <div className="card mb-4">
+                        <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                             <h2 className="h4 mb-0">Projects</h2>
+                            <button className="btn btn-sm btn-outline-light" onClick={() => navigate(-1)}>
+                                Return to Profile
+                            </button>
                         </div>
                         <div className="card-body p-0">
                             <ul className="list-group list-group-flush">

@@ -79,27 +79,27 @@ export const TaskManager = () => {
           </ResponsiveContainer>
         </div>
 
-        <div className="col-md-6">
-          <h2>Project Completion Time</h2>
-          <div style={{ height: '300px', overflowY: 'auto' }}>
-            <table className="table table-striped">
-              <thead>
-                <tr>
-                  <th>Project Name</th>
-                  <th>Completion Time (days)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {store.projectCompletionTime.map((project, index) => (
-                  <tr key={index}>
-                    <td>{project.project_name}</td>
-                    <td>{project.completion_time}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        {/* <div className="col-md-6">
+      <h2>Project Completion Time</h2>
+      <div style={{ height: '300px', overflowY: 'auto' }}>
+        <table className="table table-striped">
+          <thead>
+            <tr>
+              <th>Project Name</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {store.projectCompletionTime.map((project, index) => (
+              <tr key={index}>
+                <td>{project.project_name}</td>
+                <td>{project.completion_time}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div> */}
         <div className="d-flex justify-content-between align-items-center mb-4">
             <button className="btn btn-secondary" onClick={() => navigate(-1)}>
               Return to Profile
