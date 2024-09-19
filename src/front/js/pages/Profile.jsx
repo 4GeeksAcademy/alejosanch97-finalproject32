@@ -2,6 +2,7 @@ import React, { useEffect, useContext, useState } from "react";
 import { Context } from "../store/appContext";
 import { useNavigate, Link } from "react-router-dom";
 import { Calendar, momentLocalizer } from 'react-big-calendar';
+import { Weather } from '../component/Weather.jsx'
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import "../../styles/profile.css";
@@ -169,32 +170,32 @@ export const Profile = () => {
         e.preventDefault();
         try {
             const formData = new FormData();
-        
+
             // Agregar datos del usuario
             for (let key in newUser) {
                 if (newUser[key] !== undefined && newUser[key] !== null) {
                     formData.append(key, newUser[key]);
                 }
             }
-        
+
             // Agregar role_id y enterprise_id
             formData.append('role_id', '2');
             console.log(store.user)
             formData.append('enterprise_id', store.user.enterprise_id.toString());
-        
+
             // Agregar datos de la empresa
             formData.append('organization_name', store.user.organization_name);
             formData.append('organization_address', store.user.organization_address || "Dirección no especificada");
-        
+
             // Si hay un archivo de avatar, agregarlo
             if (newUser.avatar instanceof File) {
                 formData.append('avatar', newUser.avatar);
             }
-        
+
             console.log("Datos del nuevo usuario:", Object.fromEntries(formData));
-            
+
             const result = await actions.registerUserAndEnterprise(formData);
-            
+
             if (result.success) {
                 alert(result.message || "Usuario creado con éxito");
                 setShowCreateUser(false);
@@ -411,12 +412,19 @@ export const Profile = () => {
                                     Create Project
                                 </button>
                                 <Link className="btn btn-info" to="/projectmanager">Project Manager</Link>
+
                             </div>
+
+                        </div>
+                        <div className="card shadow-lg side-menu mt-5">
+                            <Weather />
                         </div>
                     </div>
+
                 </div>
+
             </div>
-            
+
             {showCreateUser && (
                 <div className="modal show">
                     <div className="modal-dialog">
