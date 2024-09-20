@@ -5,6 +5,7 @@ import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import "../../styles/profile.css";
+import { Weather } from '../component/Weather.jsx'
 
 const localizer = momentLocalizer(moment);
 
@@ -169,32 +170,32 @@ export const Profile = () => {
         e.preventDefault();
         try {
             const formData = new FormData();
-        
+
             // Agregar datos del usuario
             for (let key in newUser) {
                 if (newUser[key] !== undefined && newUser[key] !== null) {
                     formData.append(key, newUser[key]);
                 }
             }
-        
+
             // Agregar role_id y enterprise_id
             formData.append('role_id', '2');
             console.log(store.user)
             formData.append('enterprise_id', store.user.enterprise_id.toString());
-        
+
             // Agregar datos de la empresa
             formData.append('organization_name', store.user.organization_name);
             formData.append('organization_address', store.user.organization_address || "Dirección no especificada");
-        
+
             // Si hay un archivo de avatar, agregarlo
             if (newUser.avatar instanceof File) {
                 formData.append('avatar', newUser.avatar);
             }
-        
+
             console.log("Datos del nuevo usuario:", Object.fromEntries(formData));
-            
+
             const result = await actions.registerUserAndEnterprise(formData);
-            
+
             if (result.success) {
                 alert(result.message || "Usuario creado con éxito");
                 setShowCreateUser(false);
@@ -404,7 +405,7 @@ export const Profile = () => {
                                         <button className="btn btn-primary" onClick={() => setShowCreateUser(!showCreateUser)}>
                                             Create User
                                         </button>
-                                        <Link className="btn btn-warning" to="/taskmanager">Graph Managment</Link>
+                                        <Link className="btn btn-warning" to="/taskmanager">Graph Management</Link>
                                     </>
                                 )}
                                 <button className="btn btn-success" onClick={() => setShowCreateProject(!showCreateProject)}>
@@ -414,9 +415,15 @@ export const Profile = () => {
                             </div>
                         </div>
                     </div>
+                    <div className="card shadow-lg side-menu mt-4">
+                        <div className="card-body">
+                            <h4 className="card-title">Weather Forecast</h4>
+                            <Weather />
+                        </div>
+                    </div>
                 </div>
             </div>
-            
+
             {showCreateUser && (
                 <div className="modal show">
                     <div className="modal-dialog">
