@@ -1,38 +1,30 @@
 import React, { useState } from "react";
-
 const URL_BASE = 'https://api.openweathermap.org/data/2.5/weather?appid=97564e651a56e29b194b694d428277b8&units=metric&lang=es&'
-
 export const Weather = () => {
     const [searchWeather, setSearchWeather] = useState({
         city: "",
         country: ""
     });
     const [weather, setWeather] = useState(null);
-
     const handleChange = (event) => {
         setSearchWeather({
             ...searchWeather,
             [event.target.name]: event.target.value
         });
     };
-
     const handleSubmit = async (event) => {
         event.preventDefault();
-
         try {
             if (searchWeather.city.trim() === "" || searchWeather.country.trim() === "") {
                 return;
             }
-
             const response = await fetch(`${URL_BASE}q=${searchWeather.city},${searchWeather.country}`);
             const data = await response.json();
             setWeather(data);
-
         } catch (error) {
             console.error("Error fetching weather:", error);
         }
     };
-
     return (
         <div className="container">
             <div className="row">
@@ -52,7 +44,6 @@ export const Weather = () => {
                                 onChange={handleChange}
                             />
                         </div>
-
                         <div className="form-group">
                             <label htmlFor="country">País</label>
                             <select
@@ -70,7 +61,6 @@ export const Weather = () => {
                                 <option value="VE">Venezuela</option>
                             </select>
                         </div>
-
                         <button className="btn btn-primary col-12 mt-3">Consulta clima</button>
                     </form>
                 </div>

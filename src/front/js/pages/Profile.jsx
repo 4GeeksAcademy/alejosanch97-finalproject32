@@ -2,10 +2,10 @@ import React, { useEffect, useContext, useState } from "react";
 import { Context } from "../store/appContext";
 import { useNavigate, Link } from "react-router-dom";
 import { Calendar, momentLocalizer } from 'react-big-calendar';
-import { Weather } from '../component/Weather.jsx'
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import "../../styles/profile.css";
+import { Weather } from '../component/Weather.jsx'
 
 const localizer = momentLocalizer(moment);
 
@@ -405,24 +405,23 @@ export const Profile = () => {
                                         <button className="btn btn-primary" onClick={() => setShowCreateUser(!showCreateUser)}>
                                             Create User
                                         </button>
-                                        <Link className="btn btn-warning" to="/taskmanager">Graph Managment</Link>
+                                        <Link className="btn btn-warning" to="/taskmanager">Graph Management</Link>
                                     </>
                                 )}
                                 <button className="btn btn-success" onClick={() => setShowCreateProject(!showCreateProject)}>
                                     Create Project
                                 </button>
                                 <Link className="btn btn-info" to="/projectmanager">Project Manager</Link>
-
                             </div>
-
                         </div>
-                        <div className="card shadow-lg side-menu mt-5">
+                    </div>
+                    <div className="card shadow-lg side-menu mt-4">
+                        <div className="card-body">
+                            <h4 className="card-title">Weather Forecast</h4>
                             <Weather />
                         </div>
                     </div>
-
                 </div>
-
             </div>
 
             {showCreateUser && (
