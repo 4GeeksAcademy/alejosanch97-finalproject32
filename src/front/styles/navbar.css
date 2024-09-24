@@ -1,4 +1,4 @@
-.navbar {
+.navbars {
     background-color: #ffffff;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     padding: 15px 0;
@@ -17,8 +17,7 @@
 .navbar-left {
     display: flex;
     align-items: center;
-    position: absolute;
-    left: 0cm; 
+     
 }
 
 .navbar-logo {
@@ -26,7 +25,7 @@
 }
 
 .logo-image {
-    height: 50px; /* Aumenta el tamaño del logo */
+    height: 20px; /* Aumenta el tamaño del logo */
     width: auto;
     max-width: none;
 }
@@ -49,7 +48,7 @@
 .navbar-right {
     display: flex;
     align-items: center;
-    gap: 10px; 
+   
 }
 
 .contact-sales-btn,
