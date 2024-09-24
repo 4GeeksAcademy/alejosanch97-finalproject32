@@ -1,0 +1,103 @@
+.profile-container {
+    padding: 20px;
+    background-color: #f8f9fa;
+}
+
+.profile-image {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+}
+
+.side-menu {
+    position: sticky;
+    top: 20px;
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 10px 20px rgba(0,0,0,.12), 0 4px 8px rgba(0,0,0,.06);
+}
+
+.btn {
+    border-radius: 20px;
+    padding: 10px 20px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 10px rgba(0,0,0,.2);
+}
+
+.table {
+    border-collapse: separate;
+    border-spacing: 0 10px;
+}
+
+.table thead th {
+    border-bottom: 2px solid #dee2e6;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #6c757d;
+}
+
+.table tbody tr {
+    box-shadow: 0 2px 10px rgba(0,0,0,.05);
+    border-radius: 5px;
+}
+
+.table tbody td {
+    vertical-align: middle;
+    border: none;
+    padding: 15px;
+}
+
+.modal.show {
+    display: block;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    border-radius: 15px;
+}
+
+.modal-header {
+    border-bottom: none;
+    padding: 20px 30px;
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+.form-control, .form-select {
+    border-radius: 20px;
+    padding: 10px 15px;
+}
+
+.calendar-container {
+    height: 500px;
+}
+
+.react-big-calendar {
+    font-family: 'Arial', sans-serif;
+}
+
+.react-big-calendar .rbc-event {
+    background-color: #007bff;
+    border-radius: 5px;
+}
+
+.react-big-calendar .rbc-today {
+    background-color: #f0f8ff;
+}
