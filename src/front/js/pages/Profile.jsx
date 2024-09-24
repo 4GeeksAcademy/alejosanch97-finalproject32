@@ -343,10 +343,10 @@ export const Profile = () => {
                         </div>
                     </div>
 
-                    <div className="card mb-4">
+                    <div className="card  mb-4">
                         <div className="card-body">
                             <h4 className="card-title">Organization Users</h4>
-                            <table className="table">
+                            <table className="table ">
                                 <thead>
                                     <tr>
                                         <th>Name</th>
@@ -366,7 +366,7 @@ export const Profile = () => {
                                             <td>{user.username}</td>
                                             <td>{user.role_id}</td>
                                             <td>
-                                                <button className="btn btn-primary btn-sm me-2" onClick={() => handleEditUser(user)}>
+                                                <button className="btn btn-primary btn-sm m-2 px-4" onClick={() => handleEditUser(user)}>
                                                     Edit
                                                 </button>
                                                 <button className="btn btn-danger btn-sm" onClick={() => handleDeleteUser(user.id)}>
