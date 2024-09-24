@@ -235,11 +235,7 @@ export const ProjectManager = () => {
                         </div>
                     </div>
                 </div>
-                <div className="d-flex justify-content-between align-items-center mb-4">
-                    <button className="btn btn-secondary mt-3" onClick={() => navigate(-1)}>
-                        Return to Profile
-                    </button>
-                </div>
+                
 
                 {selectedProject && (
                     <div className="col-md-9">
@@ -345,8 +341,8 @@ export const ProjectManager = () => {
                                                                 </select>
                                                             </div>
                                                             <div className="form-group text-right">
-                                                                <button className="btn btn-secondary mr-2" onClick={() => setEditingTask(null)}>Cancel</button>
-                                                                <button className="btn btn-success" onClick={handleUpdateTask}>Save</button>
+                                                                <button className="btn btn-secondary m-2" onClick={() => setEditingTask(null)}>Cancel</button>
+                                                                <button className="btn btn-success m-2" onClick={handleUpdateTask}>Save</button>
                                                             </div>
                                                         </div>
                                                     ) : (
@@ -363,11 +359,13 @@ export const ProjectManager = () => {
                                                                 </div>
                                                             </div>
                                                             <p className="mb-2">{task.description}</p>
-                                                            <div className="d-flex justify-content-between align-items-center">
+                                                            
+                                                            <div className="d-flex justify-content-between align-items-center ">
+                                                            
+                                                                <div className="task-actions col-12 flex-wrap">
                                                                 <small className="text-muted">Due: {new Date(task.due_date).toLocaleDateString()}</small>
-                                                                <div className="task-actions">
                                                                     <select
-                                                                        className="form-control form-control-sm"
+                                                                        className="form-control form-control-sm "
                                                                         value={task.status}
                                                                         onChange={(e) => handleChangeTaskStatus(task.id, e.target.value)}
                                                                     >
@@ -414,7 +412,7 @@ export const ProjectManager = () => {
                                                                             onChange={(e) => setNewTaskComment({ ...newTaskComment, [task.id]: e.target.value })}
                                                                         />
                                                                         <div className="input-group-append">
-                                                                            <button className="btn btn-primary" onClick={() => handleAddTaskComment(task.id)}>Add</button>
+                                                                            <button className="btn btn-primary mx-3 px-3 py-2" onClick={() => handleAddTaskComment(task.id)}>Add</button>
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -424,7 +422,7 @@ export const ProjectManager = () => {
                                                 </li>
                                             ))}
                                         </ul>
-                                        <button className="btn btn-primary mt-3" onClick={() => setShowAddTaskModal(true)}>Add Task</button>
+                                        <button className="btn btn-primary m-3" onClick={() => setShowAddTaskModal(true)}>Add Task</button>
                                     </div>
                                     <div className="col-md-4">
                                         <div className="card">
@@ -456,7 +454,7 @@ export const ProjectManager = () => {
                                                             required
                                                         />
                                                         <div className="input-group-append">
-                                                            <button className="btn btn-primary" type="submit">Add</button>
+                                                            <button className="btn btn-primary mx-3 px-3 py-2" type="submit">Add</button>
                                                         </div>
                                                     </div>
                                                 </form>
@@ -532,8 +530,8 @@ export const ProjectManager = () => {
                                 </div>
                             </div>
                             <div className="modal-footer">
-                                <button type="button" className="btn btn-secondary" onClick={() => setEditingProject(null)}>Close</button>
-                                <button type="button" className="btn btn-primary" onClick={handleUpdateProject}>Save changes</button>
+                                <button type="button" className="btn btn-secondary m-1" onClick={() => setEditingProject(null)}>Close</button>
+                                <button type="button" className="btn btn-primary m-1" onClick={handleUpdateProject}>Save changes</button>
                             </div>
                         </div>
                     </div>

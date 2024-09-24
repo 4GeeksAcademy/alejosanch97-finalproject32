@@ -31,7 +31,7 @@ export const Weather = () => {
                 <div className="my-md-3">
                     <h2 className="text-center">Clima</h2>
                 </div>
-                <div className="col-12 p-3">
+                <div className="col-12 p-0">
                     <form onSubmit={handleSubmit}>
                         <div className="form-group">
                             <label htmlFor="city">Ciudad:</label>
@@ -61,7 +61,7 @@ export const Weather = () => {
                                 <option value="VE">Venezuela</option>
                             </select>
                         </div>
-                        <button className="btn btn-primary col-12 mt-3">Consulta clima</button>
+                        <button className="btn btn-primary col-12 mt-3 p-1">Consulta</button>
                     </form>
                 </div>
                 <div className="col-12 col-md-12 d-flex align-items-center p-3">
