@@ -18,15 +18,15 @@ export const Navbar = () => {
                 <div className="navbar-right">
                     {!store.token ? (
                         <>
-                            <Link to="/login" className="nav-link">Iniciar sesión</Link>
-                            <Link to="/dashboard" className="nav-link">Contactar a ventas</Link>
+                            <Link to="/login" className="nav-link p-1">Log in</Link>
+                            <Link to="/dashboard" className="nav-link p-1">Pricing</Link>
                             {/* <Link to="/register" className="">
                                 Empezar ahora
                             </Link> */}
                         </>
                     ) : (
                         <button
-                            className="btn btn-primary"
+                            className="btn btn-primary me-2 me-md-5 me-lg-5 px-3"
                             onClick={() => actions.logout()}
                         >
                             Cerrar sesión

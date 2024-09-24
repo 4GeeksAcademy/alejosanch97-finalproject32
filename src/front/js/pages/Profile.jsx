@@ -348,31 +348,44 @@ export const Profile = () => {
                             <h4 className="card-title">Organization Users</h4>
                             <table className="table ">
                                 <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Last Name</th>
-                                        <th>Email</th>
-                                        <th>Username</th>
-                                        <th>Role</th>
-                                        <th>Actions</th>
+                                    <tr className="d-flex ">
+                                        <th className="col-3 col-md-3 col-lg-2 mb-0">Name</th>
+                                        <th className="col-3 col-md 3 col-lg-2">Last Name</th>
+                                        <th className="d-none d-lg-block col-4">Email</th>
+                                        <th className="d-none d-md-none d-lg-none ">Username</th>
+                                        <th className="col-2 col-md-2">Role</th>
+                                        
+
+                                        {(store.user.role_id === 1 || store.user.role_id === "1") && (
+                                                <>
+                                                    
+                                                    <th className="col-3 col-md-5 col-lg-2">Actions</th>
+                                                    
+                                                </>
+                                            )}
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody >
                                     {store.organizationUsers && store.organizationUsers.map((user) => (
-                                        <tr key={user.id}>
-                                            <td>{user.first_name}</td>
-                                            <td>{user.last_name}</td>
-                                            <td>{user.email}</td>
-                                            <td>{user.username}</td>
-                                            <td>{user.role_id}</td>
-                                            <td>
-                                                <button className="btn btn-primary btn-sm m-2 px-4" onClick={() => handleEditUser(user)}>
-                                                    Edit
-                                                </button>
-                                                <button className="btn btn-danger btn-sm" onClick={() => handleDeleteUser(user.id)}>
-                                                    Delete
-                                                </button>
-                                            </td>
+                                        <tr key={user.id} className="d-flex">
+                                            <td className="col-3 col-md-3 col-lg-2 px-0">{user.first_name}</td>
+                                            <td className="col-3 col-md-3 col-lg-2 px-0">{user.last_name}</td>
+                                            <td className="d-none d-lg-flex col-4">{user.email}</td>
+                                            <td className="d-none d-md-none d-lg-none">{user.username}</td>
+                                            <td className="col-2 col-md-2  ">{user.role_id}</td>
+                                            {(store.user.role_id === 1 || store.user.role_id === "1") && (
+                                                <>
+                                                    <td className="col-4 col-md-5 col-lg-2 px-0">
+                                                        <button className="btn btn-sm btn-outline-warning px-3 py-1  " onClick={() => handleEditUser(user)}>
+                                                            <i className="fas fa-edit"></i>
+                                                        </button>
+                                                        <button className="btn btn-sm btn-outline-danger px-3 py-1 m-1" onClick={() => handleDeleteUser(user.id)}>
+                                                            <i className="fas fa-trash"></i>
+                                                        </button>
+                                                    </td>
+                                                </>
+                                            )}
+
                                         </tr>
                                     ))}
                                 </tbody>
