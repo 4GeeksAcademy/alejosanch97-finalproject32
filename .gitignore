@@ -66,6 +66,7 @@ node_modules/
 dist/*
 !public/
 !public/*
+!migrations/*
 
 # ignore the dist directory were our bundle files are going to be
 !.gitkeep
@@ -80,3 +81,4 @@ database.database
 database.db
 diagram.png
 __pycache__/
+
