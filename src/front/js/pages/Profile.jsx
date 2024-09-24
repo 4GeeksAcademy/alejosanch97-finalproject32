@@ -348,22 +348,22 @@ export const Profile = () => {
                             <h4 className="card-title">Organization Users</h4>
                             <table className="table ">
                                 <thead>
-                                    <tr>
+                                    <tr className=" ">
                                         <th>Name</th>
                                         <th>Last Name</th>
-                                        <th>Email</th>
-                                        <th>Username</th>
+                                        <th className="d-none d-lg-flex">Email</th>
+                                        <th className="d-none d-lg-flex">Username</th>
                                         <th>Role</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody >
                                     {store.organizationUsers && store.organizationUsers.map((user) => (
-                                        <tr key={user.id}>
+                                        <tr key={user.id} className="">
                                             <td>{user.first_name}</td>
                                             <td>{user.last_name}</td>
-                                            <td>{user.email}</td>
-                                            <td>{user.username}</td>
+                                            <td className="d-none d-lg-flex">{user.email}</td>
+                                            <td className="d-none d-lg-flex">{user.username}</td>
                                             <td>{user.role_id}</td>
                                             <td>
                                                 <button className="btn btn-primary btn-sm m-2 px-4" onClick={() => handleEditUser(user)}>
