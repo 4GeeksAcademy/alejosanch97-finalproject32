@@ -813,15 +813,19 @@ const getState = ({ getStore, getActions, setStore }) => {
 			getProjectProgress: async () => {
 				const store = getStore();
 				try {
-				  const resp = await fetch(`${process.env.BACKEND_URL}/api/dashboard/project-progress`, {
-					headers: { "Authorization": `Bearer ${store.token}` }
-				  });
-				  const data = await resp.json();
-				  setStore({ projectProgress: data });
+					const resp = await fetch(`${process.env.BACKEND_URL}/api/dashboard/project-progress`, {
+						headers: { "Authorization": `Bearer ${store.token}` }
+					});
+					if (!resp.ok) {
+						throw new Error('Network response was not ok');
+					}
+					const data = await resp.json();
+					setStore({ projectProgress: data });
 				} catch (error) {
-				  console.error("Error fetching project progress", error);
+					console.error("Error fetching project progress", error);
+					setStore({ projectProgress: [] });  // Establece un array vacío en caso de error
 				}
-			  },
+			},
 
 			  logout: () => {
 				setStore({

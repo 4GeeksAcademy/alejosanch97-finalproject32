@@ -752,6 +752,10 @@ def get_task_comments(task_id):
 def get_project_progress():
     projects = Projects.query.filter_by(enterprise_id=get_jwt_identity()).all()
     progress_data = []
+    
+    if not projects:
+        return jsonify([])  # Retorna una lista vacía si no hay proyectos
+    
     for project in projects:
         tasks = Tasks.query.filter_by(project_id=project.id).all()
         total_tasks = len(tasks)
@@ -761,6 +765,7 @@ def get_project_progress():
             'project_name': project.name,
             'progress': progress
         })
+    
     return jsonify(progress_data)
 
 @api.route('/dashboard/tasks-by-status', methods=['GET'])
